@@ -4,6 +4,7 @@ title: |
   | Regularized target encoding outperforms traditional methods in supervised machine learning with high cardinality features
 numbersections: true
 csl: elsevier-harvard.csl
+bibliography: literature.bib
 output: pdf_document
 header-includes:
    - \usepackage{algorithm}
@@ -29,9 +30,9 @@ Feature encoding techniques are implemented in several general preprocessing pac
 We provide an overview of existing implementations for R in Table \ref{tab:impls}.
 For python, an extension to scikit-learn [@pedregosa_2011], *category encoders* [@will_mcginnis_2018_1157110] is available.
 To enable a fair and reliable comparison in our study, we implemented all methods outlined above on top of the `mlrCPO` package.
-All code can be found in our **online repository** \footnote{\url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}}.
+All code can be found in our **online repository** (<https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings>).
 
-\begin{table}
+\begin{table}[H]
 \centering
 \begin{tabular}{|ccp{0.43\linewidth}|}
 \hline
@@ -49,7 +50,7 @@ regularized impact (glmm) & --            & \tt{embed} \newline \tt{mlr3pipeline
 \hline
 \end{tabular}
 \caption{
-  Overview over existing encoding implementations in R. Implementations can deviate from the algorithms described in section \ref{sec:methods} by minor implementation details.
+  Overview over existing encoding implementations in R. Implementations can deviate from the algorithms described in our manuscript by minor implementation details.
   Indicator encoding encloses a variety of methods (one-hot, dummy, helmert encoding etc.)}
 \label{tab:impls}
 \end{table}
@@ -293,10 +294,12 @@ Algorithm $1$ to $10$ contain the pseudocode for all encoding strategies studied
 
 *Note on GLMM Encoders:* To speed up the computation of the GLMM encoders, we followed the performance tips from the lme4 vignette (<https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html>): we did not compute derivations (`calc.derivs = FALSE`) and used the `NLOPT_LN_BOBYQA` optimizer from the nloptr package with liberal stopping criteria (`maxeval = 1000`, `xtol_abs = 1e-6`, `ftol_abs = 1e-6`).
 
+\newpage
+\clearpage
 
 # Comparison of One-Hot and Dummy Encoding
 
-A frequently asked question is, whether one-hot encoding or dummy encoding is to be preferred. While dummy encoding clearly is to be preferred for non-regularized linear models in order to avoid multi-colinearity, the answer is less clear for general machine learning algorithms studied in our setting.
+A frequently asked question is, whether one-hot encoding or dummy encoding is to be preferred. While dummy encoding clearly is commonly preferred for non-regularized linear models, the answer is less clear for general machine learning algorithms studied in our setting.
 
 
 ```{r, include = FALSE}
@@ -324,7 +327,7 @@ indicator[Classes == 0 & !is.na(rmse.test.mean_FALSE < rmse.test.mean_TRUE),
   oneh_beats_dummy := rmse.test.mean_FALSE < rmse.test.mean_TRUE, by = "lrn.id"]
 ```
 
-```{r oneh-win, echo = FALSE, results="asis"}
+```{r oneh-win, echo = FALSE, results="asis", fig.pos="!H"}
 oneh_win = indicator[Classes == 2 & !is.na(auc.test.mean_FALSE > auc.test.mean_TRUE),
   .(BinCl = sum(auc.test.mean_FALSE > auc.test.mean_TRUE)/.N*100), by = "lrn.id"][
 indicator[Classes > 2 & !is.na(multiclass.aunu.test.mean_FALSE > multiclass.aunu.test.mean_TRUE),
@@ -342,7 +345,7 @@ apa_table(oneh_win, digits = 0,
   note = "Percentage of encoding conditions in which one-hot performs better than dummy per task setting.")
 ```
 
-From the results shown in\ref{fig:oneh-win} we can observe, that for most algorithms and datasets, one-hot encoding is to be preferred over dummy-encoding.
+From the results shown in Table 2 we can observe, that for most algorithms and datasets, one-hot encoding is to be preferred over dummy-encoding.
 
 # Additional encoders not mentioned in the manuscript
 

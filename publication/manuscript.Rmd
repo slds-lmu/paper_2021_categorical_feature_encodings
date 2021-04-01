@@ -355,7 +355,7 @@ We use the random forest in ranger [@wright_2017] which provides efficient categ
 In the **remove** high cardinality features control condition, we remove features with a high number of levels above some threshold and use one-hot encoding (without collapsing rare levels) for the remaining features.
 This condition reflects on whether including high cardinality features does indeed improve predictive performance.
 Otherwise, the best encoding might just provide the least impairment compared to not including any high cardinality features.
-We include an overview over available implementations in widely used machine learning frameworks for R and python in the supplementary material.
+We include an overview over available implementations in widely used machine learning frameworks for R and python in the Supplementary Material.
 
 
 
@@ -505,9 +505,9 @@ It is not trivial and was carefully designed to ensure consistent results for ex
 
 ## Performance Evaluation
 
-Throughout our analysis, we use implementations of the various methods for the open-source statistical software R [@r_2018].
+Throughout our analysis, we use implementations of the various methods for the open-source statistical software R [@r_2018]. To enable a fair and reliable comparison in our study, we implemented all encoding methods on top of the `mlrCPO` package [@binder_2018].
 The pre-processing, as well as final ML algorithm described in \ref{sec:pipeline}, was trained and resampled using the `mlr` framework [@bischl_2016] together with the `batchtools` package [@lang_2017] to scale the benchmark analysis to HPC compute infrastructure.
-All materials for this study, including reproducible code for this manuscript and the necessary result objects can be downloaded from our repository (see above).
+All materials for this study, including reproducible code for this manuscript and the necessary result objects can be downloaded from our **online repository** \footnote{\url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}}.
 
 Throughout our experiments, we use 5-fold CV to obtain estimates of the predictive performance.
 Depending on the target variable, we report root mean squared error (RMSE) for regression, area under the curve (AUC) for binary classification or its extension AUNU [@ferri_2009] for multiclass problems:
@@ -940,7 +940,7 @@ This phenomenon has also been observed by @chiquet_2016.
 @tutz_2016 commented that in generalized linear models "the naive combination of usual dummy coding with reference category and standard penalties is often a bad idea" (p.254) unless the reference category is of special interest.
 In our benchmark, the reference category was chosen arbitrarily as is usually the case in ML.
 Our results suggest that one-hot encoding is the better standard compared to dummy encoding when applying nonlinear regularized models like RF, GB or SVM with (high cardinal) categorical features.
-We furthermore provide a more in-detail analysis of the performances of one-hot and dummy encoding in the supplementary material.
+We furthermore provide a more in-detail analysis of the performances of one-hot and dummy encoding in the Supplementary Material.
 
 ```{r}
 # # Cluster Table
@@ -1060,7 +1060,9 @@ Acknowledgements {-}
 This work has been funded by the German Federal Ministry of Education and Research (BMBF) under Grant No. 01IS18036A and by the Bavarian Ministry of Economic Affairs, Regional Development and Energy through the Center for Analytics – Data – Applications (ADA-Center) within the framework of „BAYERN DIGITAL II“ (20-3410-2-9-8).
 The authors of this work take full responsibilities for its content.
 
-Declarations of interest: none
+Declarations of interest {-}
+==========
+none
 
 References {#references .unnumbered}
 ==========
