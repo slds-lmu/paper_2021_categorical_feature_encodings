@@ -887,7 +887,7 @@ p
 -->
 
 Although the presented solutions of the optimization problem are not unique, rankings were highly stable for the high and low ranks. Meta rankings seem to be highly consistent with the individual patterns of encoder performances reflected in Figures \@ref(fig:regr-res) to \@ref(fig:multcl-res).
-Looking at meta-rankings, approaches based on GLMM's in combinaion with cross-validation outperform all other approaches across all algorithms. A further interesting detail ommited in Figure \ref{fig:rank-res} for clarity is that the \textit{none} encoding strategy for the random forest was beaten by all strategies except for the \textit{remove} condition. This implies, that even if the algorithm includes a mechanic for treating categorical variables, it might often be optimal to use a different strategy instead.
+Looking at meta-rankings, approaches based on GLMM's in combination with cross-validation outperform all other approaches across all algorithms. A further interesting detail omited in Figure \ref{fig:rank-res} for clarity is that the \textit{none} encoding strategy for the random forest was beaten by all strategies except for the \textit{remove} condition. This implies, that even if the algorithm includes a mechanic for treating categorical variables, it might often be optimal to use a different strategy instead.
 
 In an additional exploratory analysis, we tried to find clusters of datasets, which show systematic patterns of encoder performance (independent of the employed ML algorithm).
 We computed a partial-order consensus relation across ML algorithms for each dataset and hierarchically clustered the dataset consensus relations using the symmetric difference distance in combination with the complete linkage agglomeration method.
@@ -940,7 +940,7 @@ This phenomenon has also been observed by @chiquet_2016.
 @tutz_2016 commented that in generalized linear models "the naive combination of usual dummy coding with reference category and standard penalties is often a bad idea" (p.254) unless the reference category is of special interest.
 In our benchmark, the reference category was chosen arbitrarily as is usually the case in ML.
 Our results suggest that one-hot encoding is the better standard compared to dummy encoding when applying nonlinear regularized models like RF, GB or SVM with (high cardinal) categorical features.
-We furthermore provide a more in-detail anaysis of the performances of one-hot and dummy encoding in the supplementary material.
+We furthermore provide a more in-detail analysis of the performances of one-hot and dummy encoding in the supplementary material.
 
 ```{r}
 # # Cluster Table
