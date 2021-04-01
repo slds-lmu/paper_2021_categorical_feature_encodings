@@ -7,19 +7,19 @@ DESCRIPTION OF FOLDERS AND FILES:
 **analysis/**:
 
 - **high_cardinality_benchmark/**:
-  - *main.R* builds a batchtools registry containing all computational jobs; sources most other scripts.
+  - *main.R* builds the batchtools *registry/* containing all computational jobs; sources most other .R scripts
   - after jobs have been run on some compute cluster, *collect_results.R* extracts the results from the registry; saves the preprocessed results in *results.rds*
 
 - **upload_datasets/**:
   - scripts were used to upload some benchmark datasets to OpenML
 
 - *install.R*:
-  - Install all relevant packages for running the experiments
+  - was used to install packages on the compute cluster before running the benchmark
 
 **publication/**:
 
-- *manuscript.Rmd* is a reproducible script to build the *manuscript.pdf* submitted for publication to CSDA
-- *supplementary_material.Rmd* (*supplementary_material.pdf*) contains additional information not included in the manuscript
-- *references.bib* contains all references used in the manuscript (and some more)
+- *manuscript.Rmd* is a reproducible script to build the *manuscript.pdf*; loads some .rds files from the analysis folder
+- *supplementary_material.Rmd* builds *supplementary_material.pdf* which contains additional information not included in the manuscript
+- *references.bib* contains all references used in the manuscript
 
 For questions and remarks feel free to contact the manuscript authors.
