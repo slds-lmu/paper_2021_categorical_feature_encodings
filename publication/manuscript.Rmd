@@ -1,0 +1,1067 @@
+---
+title: Regularized target encoding outperforms traditional methods in supervised machine learning with high cardinality features
+author:
+  - name: Florian Pargent
+    email: florian.pargent@psy.lmu.de
+    affiliation: LMU Munich 1
+    footnote: 1
+  - name: Florian Pfisterer
+    #email: florian.pfisterer@stat.uni-muenchen.de
+    affiliation: LMU Munich 2
+  - name: Janek Thomas
+    #email: janek.thomas@iis.fraunhofer.de
+    affiliation: Fraunhofer
+  - name: Bernd Bischl
+    #email: bernd.bischl@stat.uni-muenchen.de
+    affiliation: LMU Munich 2
+address:
+  - code: LMU Munich 1
+    address: Department of Psychology, Psychological Methods and Assessment, LMU Munich, Leopoldstraße 13, 80802 Munich, Germany
+  - code: LMU Munich 2
+    address: Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany
+  - code: Fraunhofer
+    address: Fraunhofer Institute for Integrated Circuits, Hansastraße 32, 8068 Munich, Germany
+footnote:
+  - code: 1
+    text: "Corresponding Author"
+abstract: |
+  Because most machine learning (ML) algorithms are designed for numerical inputs, efficiently encoding categorical variables is a crucial aspect during data analysis. An often encountered problem are high cardinality features, i.e. unordered categorical predictor variables with a high number of levels. We study techniques that yield numeric representations of categorical variables which can then be used in subsequent ML applications. We focus on the impact of those techniques on a subsequent algorithm's predictive performance, and -- if possible -- derive best practices on when to use which technique. We conducted a large-scale benchmark experiment, where we compared different encoding strategies together with five ML algorithms (lasso, random forest, gradient boosting, k-nearest neighbours, support vector machine) using datasets from regression, binary- and multiclass- classification settings. Throughout our study, regularized versions of target encoding (i.e. using target predictions based on the feature levels in the training set as a new numerical feature) consistently provided the best results. Traditional encodings often make unreasonable assumptions to map levels to integers (e.g. integer encoding) or reduce the number of levels (possibly based on target information, e.g. leaf encoding) before creating binary indicator variables (one-hot or dummy encoding) were not as effective.
+keywords: supervised machine learning, benchmark, high-cardinality categorical features, target encoding, impact encoding, dummy encoding
+
+journal: "Computational Statistics and Data Analysis"
+date: "`r Sys.Date()`"
+bibliography: literature.bib
+#linenumbers: true
+numbersections: true
+csl: elsevier-harvard.csl
+output:
+  #rticles::elsevier_article: default
+  bookdown::pdf_book:
+    base_format: rticles::elsevier_article
+#output: rticles::elsevier_article
+
+header-includes:
+   - \usepackage{algorithm}
+   - \usepackage{array}
+   - \usepackage[noend]{algpseudocode}
+   - \usepackage{amsmath}
+   - \usepackage{amssymb}
+   - \usepackage{amsfonts}
+   - \usepackage{mathtools}
+   - \usepackage{bm}
+   - \usepackage{tikz}
+   - \usepackage{threeparttable}
+   - \usetikzlibrary{trees,arrows, chains, fit, positioning, calc, shapes, shadows}
+   - \setlength\parindent{0pt}
+   - \usepackage{pdflscape}
+---
+
+<!--
+Possible titles:
+- Target encoding outperforms traditional methods in supervised machine learning with high cardinality features
+- Experimental evaluation of categorical encoding techniques
+- Encoding Categorical Variables -- An empirical study
+- A Benchmark Experiment on How to Encode High Cardinality Features in Supervised Machine Learning
+- Encoding Categorical Variables -- An empirical study
+- Your algorithm can not handle categorical variables? 10 solutions you would have never thought of.
+- You will not believe how these categorical variable encoding techniques perform in practice!
+-->
+
+```{r setup, include=FALSE}
+options(scipen=3)
+```
+
+```{r analysis-preferences, include=FALSE}
+# Seed for random number generation (use old rng to be identical with master thesis)
+RNGkind(sample.kind = "Rounding")
+set.seed(42)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed, echo = FALSE)
+options(knitr.kable.NA = " ")
+# options(papaja.na_string = "")
+```
+
+```{r colour defaults, include=FALSE}
+library(RColorBrewer)
+box_colors = c("#F8766D", "#D89000", "#A3A500", "#39B600", "#00BF7D", "#00BFC4", "#00B0F6", "#9590FF", "#E76BF3", "#FF62BC", "#808080", "#000000")
+#box_colors = c(brewer.pal(9, "Set1"), "#778877", "#808080", "#000000")
+```
+
+Introduction
+============
+
+
+While increasing sample size is usually considered the most important step to improve the predictive performance of a machine learning (ML) model, using effective feature engineering comes as a close second. One remaining challenge is how to handle high cardinality features -- categorical predictor variables with a high number of different levels but without any natural ordering. While categorical variables with only a small number of possible levels can often be efficiently dealt with using standard techniques such as one-hot encoding, this approach becomes inefficient as the number of levels increases. Although domain knowledge can sometimes be used to reduce the number of theoretically relevant levels, finding strategies that work well on a large variety of problems is highly important for many applications as well as in automated ML [@thomas_2018; @thornton_2013; @feurer_2015]. Optimally, strategies should be model-agnostic, as benchmarking encoding methods together with ML algorithms from different classes is often necessary for applications. While a variety of strategies exists, there are very few benchmarks that can be used to decide which technique is expected to yield good predictive performance. Furthermore, there has recently been increasing attention on scientific benchmark studies that compare different methods to provide a clearer picture in light of a large number of methods available to practitioners [@delgado; @bommert], as they can provide at least partial answers to such questions. The goal of this study is to provide an overview of existing approaches for encoding categorical variables and to study their effect on a model's predictive performance.
+
+
+## Notation
+
+We consider the classical setting of supervised learning from an $i.i.d$ tabular dataset $\mathcal{D}$ of size $N$ sampled from a joint distribution $\mathcal{P}(\bm{x}, y)$ of a set of features $\bm{x}$ and an associated target variable $y$.
+Here, $\bm{x}$ consists of a mix of numeric (real-valued or integer-valued) features and categorical features, the latter of which we seek to transform feature-wise to numeric features using a categorical encoding technique.
+Let $x$ be a single unordered categorical feature from a feature space $\mathcal{X}$ with cardinality $card(\mathcal{X}) \leq card(\mathbb{N})$.
+It holds either $y \in \mathbb{R}$ (regression), $y \in \mathcal{C}$ from a finite class space $\mathcal{C} = \{c_1, ..., c_C\}$ with $C = 2$ (binary classification) or $C > 2$ (multiclass classification). We always assume to observe all $C$ classes in our training sample, however we might only observe a subset $\mathcal{L}^{train} \subseteq \mathcal{X}$ of a features' available $L$ levels, $\mathcal{L}^{train} = \{l_1, ..., l_L\}$ for categorical features. We denote the observed frequency of class $c$ in the training set with $N_c$ and the observed frequency of a level $l$ in the training set with $N_l$.
+As most ML algorithms require numerical features, we use categorical encoding techniques to transform each nominal feature $x^{train}$ into numerical features  $\hat{x}^{train}$ which are then used for training. If clear from the context, we use $\hat{x}_l$ as the encoded value for observation with level $l$. Although datasets might contain multiple high cardinal features, we encode each feature separately but using the same strategy.
+
+
+## Related Work
+
+We broadly categorize feature encoding techniques into \textit{target-agnostic} methods and methods that incorporate target statistics [@micci_barreca_2001].
+Figure \ref{fig:overview} contains a taxonomy of the encoding methods we consider in this work. \textit{Target-agnostic} methods do not rely on any information about the target variable and can therefore also be used in unsupervised settings. Simple strategies from this domain e.g. one-hot or dummy encoding are widely used to embed variables for classical ML algorithms as well as (deep) neural networks in the scientific literature [@kuhn_2019; @hancock] but also on  Kaggle\footnote{\url{https://www.kaggle.com/}}.
+Such indicator methods map each level of a categorical variable to a set of dichotomous features encoding the presence or absence of a particular level.
+An obvious drawback of indicator encoding is that it adds one additional feature per level of a categorical variable.
+When the number of levels increases to a point where indicator encoding leads to an unreasonable number of features, levels are often simply mapped to integer values with random order (integer encoding). Alternatively, the "hashing trick" [@weinberger_2009] can be used to randomly collapse feature levels into a smaller number of indicator variables [@kuhn_2019], or levels can be encoded by using the observed frequency of a given level in the dataset (frequency encoding).
+
+\tikzset{
+  basic/.style  = {draw, text width=4cm, drop shadow, font=\sffamily \scriptsize, rectangle},
+  root/.style   = {basic, rounded corners=2pt, thin, align=center, fill=white},
+  level-2/.style = {basic, rounded corners=5pt, thin,align=center, fill=white, text width=2.3cm},
+  level-3/.style = {basic, thin, align=center, fill=white, text width=1.8cm},
+  level-3-focus/.style = {basic, thick, align=center, fill=white, text width=1.8cm}
+}
+\begin{figure}[ht]
+  \centering
+  \begin{tikzpicture}[
+    level 1/.style={sibling distance=8em, level distance=3em},
+    edge from parent/.style={->,solid,black,thick,draw},
+    edge from parent path={(\tikzparentnode.south) -- (\tikzchildnode.north)},
+    >=latex, node distance=0.8cm, edge from parent fork down]
+    \node[root] {\textbf{Taxonomy of categorical encoding techniques}}
+      child {node[level-2, xshift=-10pt] (c1) {\textbf{Target-agnostic}}}
+      child {node[level-2, xshift=10pt] (c2) {\textbf{Target-based}}};
+
+    \begin{scope}[every node/.style={level-3}]
+      \node [below of = c1, xshift=5pt] (c11) {indicator: dummy, one-hot};
+      \node [below of = c11] (c12) {integer};
+      \node [below of = c12] (c13) {frequency};
+      \node [below of = c13] (c14) {hash};
+
+      \node [below of = c2, xshift=5pt](c21) {leaf};
+      \node [below of = c21] (c22) {impact};
+      \node [below of = c22] (c23) {regularized impact};
+    \end{scope}
+
+    \foreach \value in {1,2,3,4}
+      \draw[->] (c1.192) |- (c1\value.west);
+
+    \foreach \value in {1,...,3}
+      \draw[->] (c2.192) |- (c2\value.west);
+  \end{tikzpicture}
+  \caption{Taxonomy of common categorical variable encoding techniques.}
+  \label{fig:overview}
+\end{figure}
+
+Target-based methods try to incorporate information about the target values associated with a given level.
+Early strategies aimed to reduce the number of levels by methods like hierarchical clustering or decision trees based on statistics of the target variable, although this has been rarely described in the scientific literature [for a short mention, see @micci_barreca_2001].
+The basic idea of more advanced methods called target, impact, mean, or likelihood encoding is to use the training set to make a simple prediction of the target for each level of the categorical feature, and to use the prediction as to the numerical feature value $\hat{x}_l$ for the respective level.
+One of the earliest formal descriptions of this strategy is @micci_barreca_2001.
+A very similar approach is called *weights of evidence* in the credit scoring literature, see @hand_1997.
+In basic target encoding for regression problems, the mean target value in the training set from all observations with a certain feature level is used as the numeric value to encode that level for all observations: $\hat{x}_l = \frac{\sum_{i:x^{train}_i = l}y^{train}_i}{N_l}$.
+Simple target encoding often does not perform well with rare levels, where it tends to overfit to the training data and fail to generalize well for new observations.
+In the extreme case of a categorical feature with unique values (e.g. some hashed ID variable) studied in @prokhorenkova_2018, the mean target for each level of this feature in simple target encoding is similar to the true target value of a single observation.
+Based on the encoded feature, all observations can be predicted perfectly in the training set, even if the original variable did not contain any useful information.
+ML models would place a high priority on such an encoded feature during training but would perform badly on test data.
+To avoid this, practitioners often use regularized target encoding by adding a smoothing parameter $\epsilon$ which shrinks those effects towards the global mean [@micci_barreca_2001].
+An alternative strategy is to combine target encoding with cross-validation (CV) techniques [@prokhorenkova_2018].
+
+## Previous Encoding Benchmarks
+
+Several small-scale studies that investigate aspects of our research questions have been previously conducted.
+However, those works do not yield conclusive results due to narrower or different scopes or not considering high cardinality variables.
+One benchmark ($6$ datasets) on encoding high cardinality features (cardinality between $103$ and $9095$) in combination with gradient boosting has been published on the Kaggle forums [@prokopev_2018].
+Different versions of target encoding are compared with indicator, integer, and frequency encoding. They recommend combining the smoothed version of target encoding with 4 or 5-fold CV, never using simple target encoding and use indicator encoding only for small datasets.
+Interestingly, frequency encoding did perform well in many cases.
+@coors_2018 performed a benchmark ($12$ datasets) on encoding high cardinality features (maximum number of levels per dataset between 10 and 25847) when developing the automatic gradient boosting (autoxgboost) library [@thomas_2018]. They compared different variants of target encoding with integer and indicator encoding. In their benchmarks, target encoding only improved over target-agnostic methods on $2$ datasets, while it led to worse results on 4 datasets. For a smaller number of levels, indicator and integer encoding yielded similar results.
+As those studies only consider gradient boosting and a limited amount of datasets, it is unclear whether results generalize to other datasets and ML algorithms.
+Several other publications studied encoding text data based on similarity [@cerda_2018; @cerda_2020] and employed indicator or target encoding as baselines.
+Another line of work studies variable encodings employed within specific ML models.
+@wright_2019 study treatments for categorical variables in random forests together with dummy and integer encoding (18 datasets, cardinality between $3$ and $38$), concluding that indicator and integer encoding perform subpar in comparison to methods that re-order levels according to the target variables.
+@prokhorenkova_2018 compared their new CatBoost variant of target encoding to smoothed target encoding with no CV, hold-out, and leave-one-out CV on $8$ datasets.
+While the CatBoost method performed best, hold-out came second and target encoding without CV performed worst.
+An overview of encoding techniques tailored to be used together with Neural Networks is provided in [@hancock].
+Amongst others, they survey indicator-based methods as well as embedding-based methods but do not conduct a benchmark study.
+One widely adopted approach, in particular, has been proposed by [@guo_2016] under the term \textit{entity embeddings}.
+In contrast, our work focuses on high cardinality variables and techniques that are agnostic to the subsequent ML method, which has not been done before.
+We furthermore study this problem on a sufficiently large variety of datasets and settings to allow for more compelling conclusions.
+\newline
+
+The main goal of our study is to assess the impact different categorical encoding techniques have on subsequent models predictive performance.
+As the optimal encoding might differ depending on the ML algorithm, we consider various state-of-the-art algorithms, \textit{regularized linear models}, \textit{random forests}, \textit{gradient tree boosting}, \textit{k-nearest neighbors}, and \textit{support vector machines}.
+To find default settings for high cardinality features, we analyse a variety of datasets with different characteristics including regression, binary classification and multiclass classification problems.
+As our methods vary in runtime and complexity, we aim to learn whether more complex methods, in general, are to be preferred, or if simpler approaches suffice.
+Furthermore, the relationship between a feature's cardinality and the choice of encoding technique has not been investigated, which we study by varying the minimum number of levels above which features are transformed.
+
+## Contributions
+
+We first survey various categorical encoding techniques and conduct a comprehensive benchmark study of a broad set of categorical encoding techniques with a focus on high cardinality features.
+We study $7$ different encoding techniques in conjunction with $5$ commonly used ML algorithms across $24$ datasets, both from a classification and a regression regime. We give a detailed description of our study design to highlight important considerations for studying high cardinality features.
+Our results provide an overview of the performance of various approaches heavily used in the literature. After a discussion of results concerning predictive performance, we provide further analyses seeking to inform practitioners which methods to apply. This includes an important discussion on runtimes.
+
+<!--
+how many different encoders do we count?
+7? 10? 11?
+-->
+
+
+Encodings
+=========
+\label{sec:methods}
+
+
+Pseudocode is presented in the main text (for non-standard encodings), or the Supplementary Material (for standard methods).
+An important detail is how encoding techniques treat new levels during the prediction phase, as this is often not obvious.
+
+## Integer Encoding
+
+The simplest strategy for categorical features is integer encoding, which is also often referred to as ordinal encoding.
+To make sure that the order of the observed levels does not affect our results, we randomly map the observed levels from the training set to the integers $1$ to $L$.
+Although new levels could be mapped to $L+1$ or $0$, model predictions would be completely arbitrary as the order of the integers does not contain any information.
+Thus, we encode new levels as missing values and use mode imputation to obtain the integer which matches the most frequent level in the training set.
+Integer encoding should be an acceptable strategy for tree-based models, which can separate all original levels with repeated splits, but less so for other algorithms.
+
+## Frequency Encoding
+
+Frequency encoding simply maps each level to its observed frequency in the training set ($\hat{x}_l = N_l$).
+On the one hand, this assumes a functional relationship between the frequency of a level and the target.
+On the other hand, it implicitly reduces the number of levels, as the subsequent model can best differentiate between levels with dissimilar frequencies. This approach is typically used e.g. in natural language processing to encode token or n-gram counts.
+We encode new levels with a frequency of $1$, although choosing the minimal observed frequency for any level during training might be another reasonable strategy.
+
+## Indicator Encoding
+
+We use indicator encoding as an umbrella term for the two most common strategies to encode categorical features with a small to moderate the number of levels: one-hot and dummy encoding.
+One-hot encoding transforms the original feature into $L$ binary indicator columns, each representing one original level.
+An observation is coded with $1$ for the indicator column representing its level ($x^{train}_i = l$) and $0$ for all other indicators.
+Dummy encoding results in only $L-1$ indicator columns.
+A reference feature level is chosen that is encoded with $0$ in all indicator columns.
+For one-hot encoding, the zero vector can be used to encode new levels which were not observed during training.
+For dummy encoding, this is not useful as it collapses new levels to the (often arbitrary) reference category.
+In our study, the first level in alphabetical order is used as the reference category for dummy encoding.
+We replace new levels in the prediction phase with the most frequent level in the training set.
+In datasets with a high total number of feature levels, constructing all indicator variables can be detrimental to the predictive performance or at least increase the computational load.
+As indicator encoding is practically infeasible for high cardinality variables (a feature with $10^5$ levels would add $10^5$ new columns), we limit the number of indicator coded features by collapsing rare levels beyond a varying threshold to a single \textit{other} category before encoding.
+Closely related to dummy encoding in classical analysis of variance and regression are Helmert and Polynomial contrasts [@chambers_1992].
+However, these encodings focus on ordinal categorical features, which we did not consider in our study.
+
+## Hash Encoding
+
+Hash Encoding can be used to compute indicator variables based on a hash function [@weinberger_2009].
+The basic idea is to transform each feature level $l$ to an integer $hash(l) \in \mathbb{N}$, based on its label.
+This integer is then transformed to an indicator representation, with $1$ in indicator column number $(hash(l) \mod hash.size) + 1$ and $0$ in all remaining columns [@kuhn_2019].
+Some levels will be hashed to the same indicator representation.
+The smaller the $hash.size$, the higher the number of collapsed levels.
+The number of indicators is often effectively lower than $hash.size$, as some indicators can be constant in the training set (we remove those columns for both training and prediction).
+Although hashing would allow us to jointly hash multiple features, we hash each feature separately to improve comparability with the other encoders.
+
+## Leaf Encoding
+
+In leaf encoding, a decision tree is fitted on the training set to predict the target based on the categorical feature.
+Each level is encoded by the number of the terminal node, in which an observation with the respective level ends up.
+In that way, leaf encoding combines feature levels with similar target values.
+We use the rpart package in R [@therneau_2018] which grows CARTs with categorical feature support that can be pruned based on internal performance estimates from 10-fold CV.
+Thus, our leaf encoder automatically uses an "optimal" number of new levels.
+To speed up the computation for multiclass classification, our implementation uses the ordering approach presented in [@wright_2019].
+New levels are encoded with the arbitrary number of the terminal node with most observations during training.
+Encoded values are treated as a new categorical feature and encoded by one-hot encoding.
+Our leaf encoder can be thought of as a simplification of the approach suggested by [@grabczewski_2003].
+
+
+\begin{algorithm}
+  \caption{Leaf Encoding}
+  \label{alg:leaf}
+  \begin{algorithmic}
+    \State \underline{Training:} require number of cross-validation folds $K \in \mathbb{N}$
+    \State fit CART tree on $\mathcal{D}^{train}$ with complexity pruning based on $K$-fold cross-validation
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        $\tilde{x}_i = t$ with $x^{train}_i$ in terminal node $t$
+      \EndFor
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+        \If{$x^{new} \in \mathcal{L}^{train}$}\ {$\tilde{x}^{new} = t$ with $x^{new}$ in terminal node $t$}
+        \Else\ {$\tilde{x}^{new} = b$ where $b$ indicates the biggest terminal node}
+        \EndIf
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+
+
+## Impact Encoding
+
+The first formal description of a so-called impact or target encoder was provided by @micci_barreca_2001.
+The basic idea is to encode each feature level with the conditional target mean (regression) or the conditional relative frequency of one or more target classes (classification).
+The impact encoder for classification uses a logit link and transforms the original feature into $C$ numeric features, each representing one target class.
+A smoothing parameter $\epsilon$ is introduced to avoid division by zero.
+This parameter could be further used to regularize towards the unconditional mean.
+To allow comparing regularized (introduced below) with simple target encoding, we always choose a small $\epsilon = 0.0001$ for the impact encoder.
+Similar techniques have been proposed in the literature:
+Weights of evidence encoding from the credit scoring classification literature [@hand_1997] are almost identical to impact encoding, but does not
+consider any regularization or centring.
+Impact encoding is also referred to as a target or James-Stein encoding.
+
+## GLMM Encoding
+
+Smoothed target encoding [@micci_barreca_2001] can be interpreted as a simple (generalized) linear mixed model (glmm) in which the target is predicted by a random intercept for each feature level in addition to a fixed global intercept.
+This connection is described in [@kuhn_2019].
+To achieve regularized impact encoding, we constructed our own glmm encoders for regression, binary, and multiclass classification which are described in Algorithm \ref{alg:glmm-regr} (regression) and in the Supplementary Material (classification).
+The encoded value for each level is based on the spherical conditional mode estimates.
+In regression, the conditional modes are similar to the mean target value for each level, weighted by the relative observed frequency of that level in the training set [@gelman_2006]. For technical details, see @bates_2018.
+Additionally, the estimate of the fixed intercept can be used during the prediction phase to encode new feature levels that were not observed in the training set.
+In multiclass classification, we fit $C$ one vs. rest glmms resulting in one encoded feature per class.
+An important advantage of using a glmm over impact encoding with a smoothing parameter is that a reasonable amount of regularization is determined automatically and tuning the complete ML pipeline is not necessary.
+
+A further strategy to avoid overfitting in target encoding is to combine it with CV to train the encoder on independent observations without limiting the data to train the ML model.
+To our knowledge, we provide the first implementation which combines target encoding based on glmms with CV.
+During the training phase, we partition the data using CV into $n.folds$ and fit a glmm on each resulting training set.
+For each observation, there is exactly one glmm that did not use that observation for model fitting and can be safely used for encoding.
+Note that the $n.folds$ CV models (for $n.folds$ > 1) are only used during the training phase.
+In the prediction phase, feature values are always encoded by a single glmm fitted to the complete training set.
+We study this method in three different settings: without CV (noCV), with $5-$ (5CV) and with $10-$ fold CV (10CV).
+In our study, we use the lmer (regression) and glmer (classification) functions from the lme4 package in R [@bates_2015] as an efficient way to fit glmms.
+\begin{algorithm}
+  \caption{GLMM Encoding Regression}
+  \label{alg:glmm-regr}
+  \begin{algorithmic}
+    \State \underline{Training:} require $n.folds \in \mathbb{N}$
+     \State fit simple random intercept model: $y^{train}_i = \beta_{0l} + \epsilon_{i} = \gamma_{oo} + u_l + \epsilon_{i}$ on $\mathcal{D}^{train}$
+     \State with $u_l \overset{iid}{\sim} N(0,\tau^2)$, $\epsilon_i \overset{iid}{\sim} N(0,\sigma^2)$ and $x^{train}_i = l$, $l \in \mathcal{L}^{train}$
+    \If{$n.folds = 1$}
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        \State $\hat{x}^{train}_i = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{train}_i = l$
+      \EndFor
+    \Else\ {use $n.folds$ cross-validation scheme to make training sets $\mathcal{D}^{train}_1, \dots, \mathcal{D}^{train}_{n.folds}$}
+      \State and fit simple random intercept model on each $\mathcal{D}^{train}_{m}$
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        \State $\hat{x}^{train}_i = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{train}_i = l$ based on the model m
+        \State with $(x^{train}_i, y^{train}_i) \notin \mathcal{D}^{train}_m$
+      \EndFor
+    \EndIf
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+      \If{$x^{new} \in \mathcal{L}^{train}$}
+        \State $\hat{x}^{new} = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{new} = l$ based on full model fitted on $\mathcal{D}^{train}$
+      \Else\ {$\hat{x}^{new} = \hat{\gamma}_{00}$ based on full model fitted on $\mathcal{D}^{train}$}
+      \EndIf
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+
+## Control Conditions
+
+We include three control conditions to better understand the effectiveness of the investigated encoders:
+The performance of a featureless learner (**FL** condition) was estimated as a conservative baseline for each dataset.
+In regression problems, FL predicts the mean of the target variable in the training set for each observation in the test set.
+In classification problems, the most frequent class of the target within the training set is predicted.
+For each dataset, we also consider a random forest model without encoding (**none** condition), to compare the use of encoding methods in a random forest with a natural categorical splitting approach.
+We use the random forest in ranger [@wright_2017] which provides efficient categorical feature support by ordering levels once before starting the tree growing algorithm [@wright_2019].
+In the **remove** high cardinality features control condition, we remove features with a high number of levels above some threshold and use one-hot encoding (without collapsing rare levels) for the remaining features.
+This condition reflects on whether including high cardinality features does indeed improve predictive performance.
+Otherwise, the best encoding might just provide the least impairment compared to not including any high cardinality features.
+We include an overview over available implementations in widely used machine learning frameworks for R and python in the supplementary material.
+
+
+
+Benchmark Setup
+===============
+
+## Datasets
+
+```{r, results='hide', message=FALSE}
+library(data.table)
+library(stringi)
+library(kableExtra)
+descr_dat = as.data.table(readRDS("../analysis/high_cardinality_benchmark/descr_dat.rds"))
+# remove unfinished datasets
+descr_dat = descr_dat[!(Name %in% c("KDD98", "Traffic_violations", "sf-police-incidents")),]
+```
+
+```{r, eval=FALSE, echo=FALSE}
+# Collect info (do not run, just here for reproducibility)
+if (FALSE) {
+  # Collect cardinality information
+  library(OpenML)
+  setOMLConfig(arff.reader = "farff")
+  out = list()
+  for (id in descr_dat$OmlId) {
+    d = getOMLDataSet(id)
+    fcts = (sapply(d$data, class) == "factor") & (names(d$data) != d$desc$default.target.attribute)
+    out[[as.character(id)]] = lapply(d$data[fcts], table)
+    saveRDS(out, "../analysis/high_cardinality_benchmark/dataset_factor_levels.rds")
+    gc()
+  }
+
+  # Restart
+  setOMLConfig(arff.reader = "RWeka") # farff seems to break for one dataset
+  out = readRDS("../analysis/high_cardinality_benchmark/dataset_factor_levels.rds")
+  for (id in sample(setdiff(descr_dat$OmlId, as.numeric(names(out))))) {
+    d = getOMLDataSet(id)
+    fcts = (sapply(d$data, class) == "factor") & (names(d$data) != d$desc$default.target.attribute)
+    out[[as.character(id)]] = lapply(d$data[fcts], table)
+    saveRDS(out, "../analysis/high_cardinality_benchmark/dataset_factor_levels.rds")
+    gc()
+  }
+}
+```
+
+```{r}
+# Normalized Shannon entropy
+shannonEntropy <- function(counts.table, log.base = getOption("GeneFamilies.entropy.log.base",
+    base::exp(1))) {
+    if (length(counts.table) <= 1)
+        return(0)
+    c.t.s <- sum(counts.table)
+    -sum(sapply(counts.table, function(x) x/c.t.s * log(x/c.t.s, base = log.base)))/log(length(counts.table),
+        base = log.base)
+}
+out = readRDS("../analysis/high_cardinality_benchmark/dataset_factor_levels.rds")
+ents = lapply(out, function(x) lapply(x, shannonEntropy))
+ent2 = lapply(out, function(x) lapply(x, function(x) min(x)/max(x)))
+ents = data.table(OmlId = as.numeric(names(ents)), entropies = ents)
+descr_dat = merge(descr_dat, ents)
+```
+
+```{r}
+descr_dat2 = descr_dat
+descr_dat2[Classes == 0, task_type := rep("regr", .N)]
+descr_dat2[Classes == 2, task_type := rep("bin_class", .N)]
+descr_dat2[Classes > 2, task_type  := rep("multi_class", .N)]
+descr_dat2[, task_type := factor(task_type, levels = c("regr", "bin_class", "multi_class"))]
+setorder(descr_dat2, task_type, Obs)
+descr_dat2$HighCardLevels = stri_replace_all_fixed(descr_dat2$HighCardLevels, " ", "")
+descr_dat2[Name == "KDDCup09_upselling", HighCardLevels := "14,...,5073,5713,13990,15415,15415"]
+#hcl_list = lapply(descr_dat$HighCardLevels, function(x) {log(as.numeric(unlist(strsplit(x, #split = ","))))})
+#descr_dat2$logNHCL = ""
+```
+
+Table \ref{tab:datasets} summarizes the datasets used in our benchmark study.
+We specifically investigate datasets that contain categorical variables with a large number of levels, including many well-known datasets
+from previous studies [@cerda_2018; @prokhorenkova_2018; @coors_2018; @kuhn_2019].
+All datasets can be downloaded from the `OpenML` platform [@vanschoren_2013] based on the name or the displayed OmlId.
+The datasets include `r nrow(descr_dat[Classes == 0])` regression, `r nrow(descr_dat[Classes == 2])` binary classification, and `r nrow(descr_dat[Classes > 2])` multiclass classification problems (between `r descr_dat[Classes > 2][, min(Classes)]` and `r descr_dat[Classes > 2][, max(Classes)]` classes).
+To assess the imbalance in categorical variables we computed the normalized entropy for each categorical variable. The maximum normalized entropy is $1$, which corresponds to a uniform distribution, while a lower number indicates a larger imbalance.
+Sample sizes range between `r descr_dat[, min(Obs)]` and `r descr_dat[, max(Obs)]` observations.
+The total number of features ranges between `r descr_dat[, min(NumFeats + BinFeats + CatFeats)]` and `r descr_dat[, max(NumFeats + BinFeats + CatFeats)]`.
+Datasets contain between `r descr_dat[, min(sapply(strsplit(HighCardLevels, " "), length))]` and `r descr_dat[, max(sapply(strsplit(HighCardLevels, " "), length))]` categorical features with more than $10$ levels, with the maximum number of levels for one feature in a dataset ranging between `r descr_dat[, min(MaxCatLvls)]` and `r descr_dat[, max(MaxCatLvls)]`.
+Missing values are present in about half of the datasets.
+
+```{r datasets, warning=FALSE, results="asis"}
+library(kableExtra)
+landscape(
+  knitr::kable(
+    descr_dat2[, .(OmlId, Name, Cl = Classes, N = Obs, `NA%` = NAs*100/(Obs*(NumFeats + BinFeats + CatFeats)),
+                Num = as.integer(NumFeats), Bin = as.integer(BinFeats), Cat = as.integer(CatFeats), HighCardLevels, Entropy = "")],
+    digits=2L,
+    caption="Benchmark Datasets and Dataset Characteristics",
+    label="datasets"
+  ) %>%
+  column_spec(10, image = spec_boxplot(lapply(descr_dat2$entropies, unlist))) %>%
+  footnote(general = "OmlId = Id on OpenML, Name = name on OpenML, Cl = classes (0: regression), N = observations, NA% = percentage of missing values, Num = numeric features, Bin = binary features, Cat = categorical features, HighCardLevels = number of levels for each categorical feature with at least 10 levels (some levels are not displayed for KDDCup09_upselling), Entropy = box-plot of normalized Shannon-entropy across levels (smaller = larger imbalance).", threeparttable = TRUE) %>%
+  kable_styling(latex_options="scale_down")
+)
+```
+
+## High Cardinality Threshold
+\label{sec:HCT}
+
+<!--
+A relevant question we aim to answer is what the minimum number of levels is, for which more involved encoding methods should be used. WE CANNOT REALLY ANSWER THIS WITH ONLY 3 DIFFERENT HCT VALUES...
+-->
+It is widely assumed that more involved encoding methods are only advantageous for variables with a high number of levels, while simple indicator encoding is more appropriate for a small number of levels.
+To make our benchmark results more realistic, a high cardinality threshold (HCT) parameter with values of $10$, $25$, and $125$ was introduced which determined varying configurations for the different encoders.
+For indicator encoding, the $HCT - 1$ most frequent levels are encoded together with a single collapsed category for the remaining levels.
+For integer, frequency, hash, leaf, impact, and glmm encoders, only features with more than HCT levels in the training set were encoded with the respective strategy, while the remaining categorical features were one-hot encoded.
+HCT is used as the hash size in hash encoding.
+In the remove control condition, features with more than HCT levels in the training set are removed from the feature set.
+Based on the number of categorical features and levels per feature, some HCT settings were removed from the benchmark for some combinations of dataset $\times$ encoder.
+This made sure that encoders always affect at least one feature and that the remove condition always removes at least one feature.
+If several HCT settings of an encoder would lead to identical encoding strategies for all features of a dataset, we only kept the condition with the smallest HCT value.
+
+
+## Machine Learning Pipeline and Algorithms
+\label{sec:pipeline}
+
+Because we investigate strategies that can be used together with different models, we separately report results for different ML algorithms.
+We kept tuning the hyperparameters of the subsequent ML methods to a minimum because we were interested in the effect of the encoding techniques instead of a comparison of the ML models.
+In total, we investigate $5$ ML methods:
+Regularized linear models (LASSO) were fitted with glmnet [@friedman_2010], internally tuning the regularization using 5-fold CV.
+Random forests (RF) were trained using ranger [@wright_2017].
+Because the random forest algorithm can be expected to give reasonable results without tuning [@probst_2019], we only fixed the number of fitted trees to $500$.
+Gradient boosting models (GB) were trained using xgboost [@chen_2018].
+We set the learning rate to $0.01$ and determine the number of iterations using early stopping on a 20% holdout set.
+K-nearest neighbours (KNN) was taken from package knn [@schliep_2016] standardizing all features and using a constant $k=15$ for the number of nearest neighbours, together with an information gain filter [@brown2012] to limit the number of features to $25$.
+Support vector machines (SVM) with radial basis function kernel were trained with liquidSVM [@steinwart_2017].
+The bandwidth and regularization parameters were internally tuned using 5-fold CV, and we used a one-vs-all approach for multiclass-settings.
+
+The ML pipeline outlined below was used for all experimental conditions.
+It is not trivial and was carefully designed to ensure consistent results for extreme conditions (e.g. some levels only existing in the training data).
+
+- **Imputation I**: Create a new factor level for missing values in categorical features with more than two categories. Impute missing values in binary features using the mode and missing values in numerical features using the mean feature value in the training data.
+- **Encoding**: Transform the complete categorical features by the respective encoder.
+  In the \textit{no encoding} condition, the encoder simply passes on its input.
+  The leaf and remove conditions still return categorical features, while the remaining encoders return only numerical features. Encoders only affect categorical variables above the specified HCT value.
+- **Imputation II**: To handle new levels observed during prediction, impute missing values obtained during encoding.
+- **Drop constants**: Drop features that are constant during training. As none of the original datasets includes constant columns, this step only removes constant features that are produced by the encoders or the CV splitting procedure.
+- **Final one-hot encoding**: Transform all remaining categorical features via one-hot encoding (skipped for no encoding condition).
+- **Learner**: Use the transformed data from each training set to fit the respective ML algorithm.
+  In the prediction phase, transformed feature values (based on the trained encoder) for new observations in each test set are fed into the trained model to compute predictions.
+
+## Performance Evaluation
+
+Throughout our analysis, we use implementations of the various methods for the open-source statistical software R [@r_2018].
+The pre-processing, as well as final ML algorithm described in \ref{sec:pipeline}, was trained and resampled using the `mlr` framework [@bischl_2016] together with the `batchtools` package [@lang_2017] to scale the benchmark analysis to HPC compute infrastructure.
+All materials for this study, including reproducible code for this manuscript and the necessary result objects can be downloaded from our repository (see above).
+
+Throughout our experiments, we use 5-fold CV to obtain estimates of the predictive performance.
+Depending on the target variable, we report root mean squared error (RMSE) for regression, area under the curve (AUC) for binary classification or its extension AUNU [@ferri_2009] for multiclass problems:
+\begin{align*}
+RMSE = \sqrt{\frac{1}{N}\sum_{i=1}^N(y_i-\hat{y_i})^2},\
+AUC = \frac{U}{N_{pos} \cdot N_{neg}},\
+AUNU = \frac{\sum_{c = 1}^C AUC_c}{C}
+\end{align*}
+$N$: number of observations, $N_{pos}$ and $N_{neg}$: number of true labels in both classes, $U$: test statistic of the Mann-Whitney-U test, and $AUC_c$: one vs. rest $AUC$ of class $c$.
+
+Throughout the benchmark study, each encoding method listed in Section \ref{sec:methods} is applied together with all ML algorithms (c.f. Section \ref{sec:pipeline}) across
+high cardinality thresholds (HCT) $10$, $25$, $125$.
+While we only report results for the best HCT setting for each ML algorithm $\times$ dataset combination in Section \ref{sec:results}, we study the effect of the HCT parameter in more detail in section \ref{sec:hct_study}.
+
+
+Benchmark Results
+=================
+\label{sec:results}
+
+```{r}
+res = readRDS("../analysis/high_cardinality_benchmark/results.rds")
+
+# remove cluster and random forest encoders
+res = res[algorithm != "cluster",]
+res = res[algorithm != "ranger",]
+
+# keep old algorithm column for later code
+res[, algorithm2 := algorithm]
+
+# separate dummy and one-hot encoding into two algorithms
+res[algorithm == "dummy" & dummy.enc == FALSE, algorithm := "one-hot"]
+# separate glmm conditions into three algorithms
+res[algorithm == "lmer" & n.folds == 1, algorithm := "glmm-noCV"]
+res[algorithm == "lmer" & n.folds == 5, algorithm := "glmm-5CV"]
+res[algorithm == "lmer" & n.folds == 10, algorithm := "glmm-10CV"]
+
+# create factor variables with intended names, in the intended order
+res[, algorithm := factor(algorithm,
+  levels = c("integer", "frequency", "dummy", "one-hot", "hash", "leaf", "impact", "glmm-noCV", "glmm-5CV", "glmm-10CV", "none", "remove"))]
+res[, lrn.id := factor(lrn.id,
+  levels = c("cvglmnet", "ranger", "xgboost.earlystop.wrap", "kknn", "liquidsvm", "featureless"),
+  labels = c("LASSO", "RF", "GB", "KNN", "SVM", "FL"))]
+
+# plotting function
+library(ggplot2)
+library(gridExtra)
+library(grid)
+library(ggpubr)
+plotResultsGrid = function(dat, mes, legend = FALSE, xlabels = FALSE, ytext = TRUE, ylab = " ",
+  colors = box_colors) {
+  p = ggplot(dat, aes_string(x = "lrn.id", y = paste0(mes, ".test.mean"),
+    color = "algorithm", shape = "algorithm")) +
+    geom_pointrange(aes_string(ymin = paste0(mes, ".test.min"), ymax = paste0(mes, ".test.max")),
+      position = position_dodge(width = 0.8)) +
+    ggtitle(label = unique(dat$Name)) +
+    scale_shape_manual(values = 0:11) +
+    ylab(ylab) + theme_bw() +
+    guides(color = guide_legend(nrow = 1, title = NULL, label.position = "top"),
+      shape = guide_legend(nrow = 1, title = NULL, label.position = "top")) +
+    theme(axis.title.x = element_blank(), legend.spacing.x = unit(0.5, "cm"))
+  if (!xlabels) {
+    p = p + theme(axis.text.x=element_blank())
+  }
+  if (!ytext) {
+    p = p + theme(axis.title.y=element_blank())
+  }
+  if (!legend) {
+    p = p + theme(legend.position="none")
+  }
+  if (mes %in% c("rmse")) {
+    p = p + scale_y_reverse()
+  }
+  if (!is.null(colors)) {
+    p = p + scale_colour_manual(values = colors)
+  }
+  p
+}
+```
+
+```{r}
+# keep only the best high.card.thresh condition of each encoding on each dataset for each learner
+res_max = rbind(
+  res[Classes == 2][
+    , .SD[which.max(auc.test.mean)], by = c("lrn.id", "algorithm", "problem")],
+  res[Classes == 0][
+    , .SD[which.min(rmse.test.mean)], by = c("lrn.id", "algorithm", "problem")],
+  res[Classes > 2][
+    , .SD[which.max(multiclass.aunu.test.mean)], by = c("lrn.id", "algorithm", "problem")]
+)
+
+# conditions in which no primary performance measure could be computed (only SVM for some datasets)
+svm_errors = res[is.na(auc.test.mean) & is.na(rmse.test.mean) & is.na(multiclass.aunu.test.mean), .(job.id, lrn.id, algorithm, high.card.thresh, problem, Name)]
+# flag datasets for SVM where not all algorithms could be computed (remove them to avoid biasing ranks)
+inds_rm_SVM = res_max$problem %in% svm_errors$problem & res_max$lrn.id == "SVM"
+
+# compute ranks (low rank = good performance) of encoders within each combination of learner and dataset
+res_max[!(inds_rm_SVM | lrn.id == "FL"), `:=` (rank_auc = rank(-auc.test.mean, na.last = "keep"),
+  rank_rmse = rank(rmse.test.mean, na.last = "keep"),
+  rank_aunu = rank(-multiclass.aunu.test.mean, na.last = "keep")),
+  by = c("lrn.id", "problem")]
+
+# create rank variable containing ranks based on the primary measure
+res_max[Classes == 2, rank_mes1 := rank_auc]
+res_max[Classes == 0, rank_mes1 := rank_rmse]
+res_max[Classes > 2, rank_mes1 := rank_aunu]
+```
+
+The overarching question we aim to answer in our study is which encoding methods generally work well across various datasets.
+We report results for regression and classification datasets separately, as the associated metrics differ in scale.
+
+For  `r length(svm_errors[, unique(Name)])` datasets, some conditions with the SVM lead to unexpected crashes due to memory problems or numerical errors. We completely removed those datasets for the SVM when computing ranks or other statistics to compare encodings across datasets.
+
+## Encoder Performance on Each Dataset
+
+(ref:regr-res) Performance estimates from 5-CV for regression (mean, min, max). For each combination, only the best HCT condition is displayed. Note the reversed y-axis to ease visual interpretation.
+
+```{r regr-res, fig.cap='(ref:regr-res)', out.width="\\textwidth", fig.pos="!h", fig.width=9, fig.height=8.1}
+regr = res_max[Classes == 0 & lrn.id != "FL"]
+
+lay1 = rbind(c(1, 2), c(3, 4), c(5, 6))
+lay2 = rbind(c(1, 2))
+
+tmp <- ggplot_gtable(ggplot_build(plotResultsGrid(regr[problem == "41211"], "rmse", xlabels = TRUE, legend = TRUE)))
+leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+legend <- tmp$grobs[[leg]]
+
+grob1 = arrangeGrob(
+  plotResultsGrid(regr[problem == "41211"], "rmse", ylab = "RMSE"), plotResultsGrid(regr[problem == "41445"], "rmse", ytext = FALSE),
+  plotResultsGrid(regr[problem == "41210"], "rmse", ylab = "RMSE"), plotResultsGrid(regr[problem == "41437"], "rmse", ytext = FALSE),
+  plotResultsGrid(regr[problem == "41444"], "rmse", ylab = "RMSE"), plotResultsGrid(regr[problem == "41267"], "rmse", ytext = FALSE),
+  layout_matrix = lay1
+)
+grob2 = arrangeGrob(
+  plotResultsGrid(regr[problem == "41251"], "rmse", xlabels = TRUE, ylab = "RMSE"), plotResultsGrid(regr[problem == "41255"], "rmse", xlabels = TRUE, ytext = FALSE),
+  layout_matrix = lay2
+)
+grid.arrange(legend, grob1, grob2, nrow = 3, heights = c(0.1, 1, 0.38))
+```
+
+(ref:bincl-res) Performance estimates from 5-CV for binary classification (mean, min and max). For each combination, only the best HCT condition is displayed.
+
+```{r bincl-res, fig.cap='(ref:bincl-res)', out.width="\\textwidth", fig.pos="!h", fig.width=9, fig.height=10}
+bin_cl = res_max[Classes == 2 & lrn.id != "FL"]
+
+lay1 = rbind(c(1, 2), c(3, 4), c(5, 6), c(7, 8))
+lay2 = rbind(c(1, 2))
+
+tmp <- ggplot_gtable(ggplot_build(plotResultsGrid(bin_cl[problem == "41283"], "auc", xlabels = TRUE, legend = TRUE)))
+leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+legend <- tmp$grobs[[leg]]
+
+grob1 = arrangeGrob(
+  plotResultsGrid(bin_cl[problem == "41283"], "auc", ylab = "AUC"), plotResultsGrid(bin_cl[problem == "981"], "auc", ytext = FALSE),
+  plotResultsGrid(bin_cl[problem == "4135"], "auc", ylab = "AUC"), plotResultsGrid(bin_cl[problem == "41434"], "auc", ytext = FALSE),
+  plotResultsGrid(bin_cl[problem == "1590"], "auc", ylab = "AUC"), plotResultsGrid(bin_cl[problem == "1114"], "auc", ytext = FALSE),
+  plotResultsGrid(bin_cl[problem == "41162"], "auc", ylab = "AUC"), plotResultsGrid(bin_cl[problem == "41442"], "auc", ytext = FALSE),
+  layout_matrix = lay1
+)
+grob2 = arrangeGrob(
+  plotResultsGrid(bin_cl[problem == "41447"], "auc", xlabels = TRUE, ylab = "AUC"), plotResultsGrid(bin_cl[problem == "41224"], "auc", xlabels = TRUE, ytext = FALSE),
+  layout_matrix = lay2
+)
+grid.arrange(legend, grob1, grob2, nrow = 3, heights = c(0.1, 1, 0.28))
+```
+
+(ref:multcl-res) Performance estimates from 5-CV for multiclass classification (mean, min and max). For each combination, only the best HCT condition is displayed.
+
+```{r multcl-res, fig.cap='(ref:multcl-res)', out.width="\\textwidth", fig.pos="!h", fig.width=9, fig.height=6}
+mult_cl = res_max[Classes > 2 & lrn.id != "FL"]
+
+lay1 = rbind(c(1, 2), c(3, 4))
+lay2 = rbind(c(1, 2))
+
+tmp <- ggplot_gtable(ggplot_build(plotResultsGrid(mult_cl[problem == "188"], "multiclass.aunu", xlabels = TRUE, legend = TRUE)))
+leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+legend <- tmp$grobs[[leg]]
+
+grob1 = arrangeGrob(
+  plotResultsGrid(mult_cl[problem == "188"], "multiclass.aunu", ylab = "AUNU"), plotResultsGrid(mult_cl[problem == "41446"], "multiclass.aunu", ytext = FALSE),
+  plotResultsGrid(mult_cl[problem == "41212"], "multiclass.aunu", ylab = "AUNU"), plotResultsGrid(mult_cl[problem == "41216"], "multiclass.aunu", ytext = FALSE),
+  layout_matrix = lay1
+)
+grob2 = arrangeGrob(
+  plotResultsGrid(mult_cl[problem == "41440"], "multiclass.aunu", xlabels = TRUE, ylab = "AUNU"), plotResultsGrid(mult_cl[problem == "4541"], "multiclass.aunu", xlabels = TRUE, ytext = FALSE),
+  layout_matrix = lay2
+)
+grid.arrange(legend, grob1, grob2, nrow = 3, heights = c(0.15, 1, 0.55))
+```
+
+Mean performance estimates along with minimum and maximum performance from the 5-CV folds are reported for all datasets in Figures \@ref(fig:regr-res) (regression), \@ref(fig:bincl-res) (binary classification), and \@ref(fig:multcl-res) (multiclass classification).
+To reduce the complexity induced by the hyperparameter HCT we only display the parameter condition with the best performance for each combination of dataset $\times$ encoding $\times$ ML algorithm.
+The y-axis differs for all datasets and is reversed for the RMSE for better visual comparison.
+For some datasets, the remove condition performed very similar to the other encodings (e.g. *ames-housing*, *porto-seguro*), suggesting that categorical features were not informative.
+Performance in some folds was below the FL learner for *flight-delay-usa-dec-2017* ($RMSE_{FL} =$ `r res[lrn.id == "FL" & Name == "flight-delay-usa-dec-2017", rmse.test.mean]`) and *nyc-taxi-green-dec-2016* ($RMSE_{FL} =$ `r res[lrn.id == "FL" & Name == "nyc-taxi-green-dec-2016", rmse.test.mean]`).
+<!-- den satz können wir nicht rauslassen, sonst gibt es zum FL keine Information im ganzen Paper -->
+
+On datasets where substantive performance differences could be observed, target encoding with the glmm encoder was generally *most* effective.
+The *worst* encoder depended on the ML algorithm and respective dataset.
+For datasets *Click_prediction_small*, *KDDCup09_upselling*, *kick*, and *okcupid-stem* some combinations of encoder $\times$ ML algorithm performed worse than simply removing high cardinality features.
+
+## Meta Rankings and Dataset Clustering
+
+```{r, include=FALSE}
+library(batchtools)
+library(BBmisc)
+library(relations)
+library(ggdendro)
+
+# load registry in read-only mode
+reg = loadRegistry(file.dir = "../analysis/high_cardinality_benchmark/registry", writeable = FALSE)
+
+# save all test set evaluations as data.table: list column result, each entry is a data.frame
+res0 = reduceResultsDataTable(reg = reg, fun = function(x) x$measures.test)
+
+# new unwrapped data.table with each row referring one test set evaluation
+dat = data.table()
+for(i in seq_row(res0)) {
+  dat = rbind(dat, res0[i, data.table(job.id, rbindlist(result, fill = TRUE))], fill = TRUE)
+}
+
+# merge job parameters, descriptives, measures
+descr_dat$OmlId = as.character(descr_dat$OmlId)
+dat = unwrap(getJobTable(reg = reg))[descr_dat, on = c("problem==OmlId")][
+  dat, on = "job.id"]
+
+# remove cluster and random forest encoders
+dat = dat[algorithm != "cluster",]
+dat = dat[algorithm != "ranger",]
+
+dat_max = dat[job.id %in% res_max$job.id]
+# keep old algorithm column for later code
+dat_max[, algorithm2 := algorithm]
+# separate dummy and one-hot encoding into two algorithms
+dat_max[algorithm == "dummy" & dummy.enc == FALSE, algorithm := "one-hot"]
+# separate glmm conditions into three algorithms
+dat_max[algorithm == "lmer" & n.folds == 1, algorithm := "glmm-noCV"]
+dat_max[algorithm == "lmer" & n.folds == 5, algorithm := "glmm-5CV"]
+dat_max[algorithm == "lmer" & n.folds == 10, algorithm := "glmm-10CV"]
+
+# create factor variables with intended names, in the intended order
+dat_max[, algorithm := factor(algorithm,
+  levels = c("integer", "frequency", "dummy", "one-hot", "hash", "leaf", "impact", "glmm-noCV", "glmm-5CV", "glmm-10CV", "none", "remove"))]
+dat_max[, lrn.id := factor(lrn.id,
+  levels = c("cvglmnet", "ranger", "xgboost.earlystop.wrap", "kknn", "liquidsvm", "featureless"),
+  labels = c("LASSO", "RF", "GB", "KNN", "SVM", "FL"))]
+
+# define primary performance measures for all task types
+dat_max[Classes == 2, mes1 := auc]
+dat_max[Classes == 0, mes1 := - rmse]
+dat_max[Classes > 2, mes1 := multiclass.aunu]
+
+# remove problematic datasets with SVM and FL learner
+dat_max = dat_max[!(lrn.id == "SVM" & problem %in% unique(svm_errors$problem))]
+dat_max = dat_max[lrn.id != "FL"]
+
+## t-test for cross-validation (nadeau & bengio, 2000)
+t.test.cor.paired = function(x1, x2, N, alpha = 0.05, lower.tail = FALSE) {
+  n = n.folds = length(x1)
+  N_train = (n.folds - 1) / n.folds * N
+  N_test = 1 / n.folds * N
+  d = x1 - x2
+  m = mean(d)
+  v = var(d)
+
+  t = m / sqrt(v * (1/n + N_test/N_train))
+  df = n - 1
+
+  p = pt(t, df, lower.tail = lower.tail)
+  as.numeric(p < alpha) # x1 dominates x2
+}
+
+# compute relations between encodings for all learners and datasets
+rel_list = sapply(unique(dat_max$lrn.id), function(lname) {
+  sapply(unique(dat_max[lrn.id == lname, Name]), function(dname) {
+    dt = dat_max[lrn.id == lname & Name == dname]
+    grid = CJ(x1 = levels(droplevels(dt$algorithm)), x2 = levels(droplevels(dt$algorithm)))
+    grid$x1_dom_x2 = apply(grid, 1, function(x) t.test.cor.paired(x1 = dt[algorithm %in% x[1], mes1], x2 = dt[algorithm %in% x[2], mes1], N = dt[,unique(Obs)]))
+    grid[x1 == x2, x1_dom_x2 := 0]
+    m = matrix(grid$x1_dom_x2, byrow = TRUE, ncol = length(unique(grid$x1)), nrow = length(unique(grid$x1)))
+    dimnames(m) = list(unique(grid$x1), unique(grid$x1))
+    as.relation(m)
+  }, simplify = FALSE, USE.NAMES = TRUE)
+}, simplify = FALSE)
+names(rel_list) = unique(dat_max$lrn.id)
+
+## compute consensus relations
+set.seed(1)
+cons_list = lapply(rel_list, function(lrn) {
+  ens = relation_ensemble(list = lrn)
+  relation_consensus(ens, "symdiff/W", control = list(n = "all"))
+  })
+
+## compute meta cluster analysis across all learners
+
+# remove none encoding to ensure same relation domain for all learners
+dat_max = dat_max[algorithm != "none"]
+
+# compute relations between encodings for all datasets and learners
+rel_list2 = sapply(unique(dat_max$Name), function(dname) {
+  sapply(unique(dat_max[Name == dname, lrn.id]), function(lname) {
+    dt = dat_max[lrn.id == lname & Name == dname]
+    grid = CJ(x1 = levels(droplevels(dt$algorithm)), x2 = levels(droplevels(dt$algorithm)))
+    grid$x1_dom_x2 = apply(grid, 1, function(x) t.test.cor.paired(x1 = dt[algorithm %in% x[1], mes1], x2 = dt[algorithm %in% x[2], mes1], N = dt[,unique(Obs)]))
+    grid[x1 == x2, x1_dom_x2 := 0]
+    m = matrix(grid$x1_dom_x2, byrow = TRUE, ncol = length(unique(grid$x1)), nrow = length(unique(grid$x1)))
+    dimnames(m) = list(unique(grid$x1), unique(grid$x1))
+    as.relation(m)
+  }, simplify = FALSE, USE.NAMES = TRUE)
+}, simplify = FALSE, USE.NAMES = TRUE)
+
+# compute consensus relation for each dataset across learners
+set.seed(1)
+lrn_cons_list = lapply(rel_list2, function(dt) {
+  ens = relation_ensemble(list = dt)
+  relation_consensus(ens, "symdiff/O")
+})
+
+# compute cluster analysis of datasets
+meta_ens = relation_ensemble(list = lrn_cons_list)
+meta_d = relation_dissimilarity(meta_ens)
+meta_clust = hclust(meta_d)
+```
+
+To further summarize the results, we computed meta rankings for each ML algorithm:
+First, we defined an encoder relation within each dataset, based on corrected resample t-tests [@nadeau_2003].
+An encoding was defined to beat another encoding if the one-sided p-value of the t-test was $< .05$.
+This allowed us to compute a weak-order consensus ranking $R$ defined by the optimization problem:
+
+$$ \underset{R \in \mathcal{C}}{arg\ min} \ \sum_{b=1}^B d(R_b, R)$$
+
+where $d$ is the symmetric difference distance and $R_b$ is the relation for dataset $b$ [@hornik_2007; @meyer_2018].
+The symmetric difference between two relations is the number of cases one encoding beats another encoding in one relation but not in the other one.
+This procedure resulted in the meta rankings based on the consensus ranking for each ML algorithm detailed in Figure \ref{fig:rank-res}.
+
+
+(ref:rank-res) Consensus rankings across all datasets for each algorithm.
+
+```{r, rank-res, out.height=".55\\textwidth", fig.cap='(ref:rank-res)', out.width="\\textwidth"}
+plotdt = rbindlist(lapply(names(cons_list), function(x) {
+  r = relation_class_ids(cons_list[[x]][[1]])
+  data.frame(method = names(r), rank = r, algorithm = x)
+}))
+set(plotdt, which(plotdt$method == "remove" & plotdt$algorithm == "RF"), "rank", 11)
+plotdt = plotdt[-which(plotdt$method == "none"),]
+p = ggplot(plotdt, aes(x = rank, y = algorithm, fill = method)) +
+ geom_tile(size = .5, width =.93, height =.93, color = "black")
+p = p +
+  theme_minimal() +
+  theme(
+    axis.title.x = element_blank(),
+    legend.spacing.x = unit(0.1, "cm"),
+    legend.key.size = unit(.9, "cm")
+  ) +
+  theme(axis.title.y=element_blank()) +
+  theme(legend.background = element_blank()) +
+  theme(legend.key = element_blank()) +
+  theme(legend.title = element_blank()) +
+  scale_fill_manual(values = box_colors) +
+  theme(panel.grid.minor.y = element_blank()) +
+  theme(panel.grid.major.y = element_blank()) +
+  theme(panel.grid.minor.x = element_blank()) +
+  theme(panel.grid.major.x = element_blank()) +
+  scale_x_continuous(breaks = c(1:11), expand = c(0, 0))
+p
+```
+<!--
+
+- **LASSO:** `r paste0(names(sort(relation_class_ids(cons_list$LASSO[[1]]))), collapse = " > ")`
+
+- **RF:** `r paste0(names(sort(relation_class_ids(cons_list$RF[[1]]))), collapse = " > ")`
+
+- **GB:** `r paste0(names(sort(relation_class_ids(cons_list$GB[[1]]))), collapse = " > ")`
+
+- **KNN:** `r paste0(names(sort(relation_class_ids(cons_list$KNN[[1]]))), collapse = " > ")`
+
+- **SVM:** `r paste0(names(sort(relation_class_ids(cons_list$SVM[[1]]))), collapse = " > ")`
+-->
+
+Although the presented solutions of the optimization problem are not unique, rankings were highly stable for the high and low ranks. Meta rankings seem to be highly consistent with the individual patterns of encoder performances reflected in Figures \@ref(fig:regr-res) to \@ref(fig:multcl-res).
+Looking at meta-rankings, approaches based on GLMM's in combinaion with cross-validation outperform all other approaches across all algorithms. A further interesting detail ommited in Figure \ref{fig:rank-res} for clarity is that the \textit{none} encoding strategy for the random forest was beaten by all strategies except for the \textit{remove} condition. This implies, that even if the algorithm includes a mechanic for treating categorical variables, it might often be optimal to use a different strategy instead.
+
+In an additional exploratory analysis, we tried to find clusters of datasets, which show systematic patterns of encoder performance (independent of the employed ML algorithm).
+We computed a partial-order consensus relation across ML algorithms for each dataset and hierarchically clustered the dataset consensus relations using the symmetric difference distance in combination with the complete linkage agglomeration method.
+The resulting dendrogram is displayed in Figure \@ref(fig:dendrogram).
+Although the cluster structure is somewhat ambiguous, roughly three clusters can be described:
+The first 9 datasets from the top of the dendrogram are characterized by a medium to a high number of levels, low performance of the remove condition (indicating the importance of high cardinality features) and clear performance advantage of target encoders.
+For the next 13 datasets which contain the smallest number of levels, traditional encodings can compete with target encoding.
+This biggest cluster also includes 9 datasets with zero distances, in which no significant performance differences could be observed between any encoding conditions (nor with the remove condition, indicating that high cardinality features are not very informative).
+The last two datasets with the highest number of levels formed a separate cluster, in which target encoding without strong regularization (impact, glmm-noCV) showed severe overfitting.
+Note that clusters were not determined by problem type, again suggesting that encoder rankings are somewhat similar for regression and classification settings.
+
+(ref:dendro) Hierarchical cluster analysis of benchmark datasets. The symmetric difference distance between two datasets reflect differences in performance patterns between encodings (independent of the employed ML algorithm).
+
+```{r dendrogram, fig.cap='(ref:dendro)', out.width="\\textwidth", fig.pos="!h", fig.width=9, fig.height=6}
+# plot dendrogram
+ggdendrogram(meta_clust, rotate = TRUE) + theme(text = element_text(size=20))
+```
+
+## Summary of Encoder Performance
+
+Our results indicate that regularized target encoding was superior or at least competitive on all datasets.
+Especially effective was glmm encoding with 5-fold-CV, which ranked first place for all ML algorithms except SVM.
+While the impact encoding used no regularization, we compared different amounts of regularization for the glmm encoder.
+When performance differences between target encoders were observed, more regularization seemed beneficial.
+In those datasets, impact encoding not only performed worse than glmm with CV but was sometimes also inferior compared to other encoders.
+We could not observe a setting in which regularized target encoding was convincingly beaten by target agnostic methods.
+When looking for a simple default method, indicator encoding in combination with collapsing small levels seems a robust alternative, although the glmm strategies should be preferred.
+
+We observed several interesting patterns, which we aim to summarize:
+Integer encoding did not perform well together with XGBoost in our benchmark in contrast to what is stated in the documentation of other boosting libraries\footnote{\url{https://lightgbm.readthedocs.io/en/latest/Advanced-Topics.html\#categorical-feature-support}}.
+In contrast, target-based encoders (especially the glmm encoder) seem to be a compelling strategy.
+For LASSO, previous studies have suggested that indicator encoding works well, even with a very high number of levels [@cerda_2018].
+Although the glmm encoders ranked first in our benchmark for the LASSO, it was the only algorithm where indicator encoding ranked second.
+Note that for computational reasons we limited the maximum amount of indicator variables to 125 in our experimental design.
+The HCT = 125 setting performed best for LASSO with indicator encoding in a large number of datasets, indicating that performance might have further improved with higher values.
+Both KNN and SVM rely on numerical distances in feature space and tend to perform poorly in the presence of high dimensionality.
+Thus, we expected that target encoding should work well here as it transforms categories into a single, smooth numerical feature. This was backed by our benchmark results. For some datasets (*medical_charges*, *road-safety-drivers-sex*, and *Midwest_survey*) KNN (without tuning of the optimal number of nearest neighbours) could compete with the more sophisticated ML algorithms when combined with target encoding, but performed poorly with other encoders.
+Although consistent with the big picture, SVM results have to be considered with care, as some experimental conditions resulted in unexpected computational errors.
+In RF, a widely used strategy to deal with categorical features is to order levels by average target statistics for a given level.
+For a small number of levels, this approach has been reported superior to indicator and integer encoding [@wright_2019], while we observed poor performance for datasets with a larger number of levels.
+
+In line with earlier research [@micci_barreca_2001; @prokhorenkova_2018], target encoding with regularization (glmm) performed better or equally well in comparison with the unregularized impact encoder.
+The glmm method was the overall winner based on the encoder rankings across datasets and outperformed impact encoding on some datasets.
+Our results show that combining target encoding based on glmms with 5-fold CV led to an improved predictive performance on many datasets.
+Performance often did not improve further when using 10 folds, suggesting that 5 folds might be a good default in practice.
+The glmm encoder has a clear advantage over target encoding with a smoothing hyperparameter [@micci_barreca_2001], as costly tuning the whole ML pipeline with different smoothing values is not required.
+
+On a side note, we found that one-hot encoding usually gave a slightly better performance than dummy encoding.
+This phenomenon has also been observed by @chiquet_2016.
+@tutz_2016 commented that in generalized linear models "the naive combination of usual dummy coding with reference category and standard penalties is often a bad idea" (p.254) unless the reference category is of special interest.
+In our benchmark, the reference category was chosen arbitrarily as is usually the case in ML.
+Our results suggest that one-hot encoding is the better standard compared to dummy encoding when applying nonlinear regularized models like RF, GB or SVM with (high cardinal) categorical features.
+We furthermore provide a more in-detail anaysis of the performances of one-hot and dummy encoding in the supplementary material.
+
+```{r}
+# # Cluster Table
+# cluster_ids = cutree(meta_clust, k = 3)
+# clust_descr = merge(descr_dat, data.table(Name = names(cluster_ids), MetaClust = unname(cluster_ids)), by = "Name", all.x = TRUE)
+# # Names = paste0(unique(OmlId), collapse = ", ")
+# clust_descr = clust_descr[!is.na(MetaClust), .(NDat = .N, `Type%` = paste(round(sum(Classes == 0)/.N*100), round(sum(Classes == 2)/.N*100),
+#   round(sum(Classes > 2)/.N*100), sep = ","), N = as.numeric(median(Obs)), `NA%` = as.numeric(median(NAs*100/(Obs*(NumFeats + BinFeats + CatFeats)))),
+#     `N+BFts` = as.numeric(median(NumFeats + BinFeats)), CFts = as.numeric(median(CatFeats)), MdLvls = as.numeric(median(MdHighCardLvls)),
+#       MxLvls = as.numeric(median(MaxCatLvls))), keyby = MetaClust]
+# knitr::kable(clust_descr)
+```
+
+## Runtime Analysis
+
+```{r time-ranks, results="asis"}
+run_time = merge(res_max[!(inds_rm_SVM | lrn.id == "FL")],
+  res_max[!(inds_rm_SVM | lrn.id == "FL" | algorithm != "one-hot"), .(lrn.id, problem,
+    time.running.onehot = time.running)], by = c("lrn.id", "problem"), all.x = TRUE)
+run_time[, time.running.stand := as.numeric(time.running) / as.numeric(time.running.onehot)]
+run_time = run_time[, .(M = median(time.running.stand), mn = min(time.running.stand), mx = max(time.running.stand)), by = c("algorithm", "lrn.id")]
+run_time[, M := paste0("$", round(M,2), "_{", round(mn,1), "}^{", round(mx,1), "}$")][, mn := NULL][, mx := NULL]
+run_time = dcast(run_time, ... ~ lrn.id, value.var = "M")
+colnames(run_time)[1] = "Encoding"
+kbl(run_time, digits=2L, caption = "Proportional Increase in Runtime Compared to One-Hot Encoding",
+    escape = FALSE) %>%
+  footnote("Median $_{min}^{max}$ across datasets of the proportional increase in runtime from 5-CV, when comparing the respective encoder with one-hot encoding. Only the best HCT conditions are reported.", threeparttable = TRUE, escape = FALSE)
+```
+
+To determine whether traditional encodings might be worth it when facing limited computational resources, we further analyzed the runtimes of the whole analysis pipeline for different encoders and ML algorithms.
+Aggregated results are shown in Table \@ref(tab:time-ranks).
+To enable a meaningful comparison, we report runtime as the fraction of a full pipeline's strategy compared to running simple one-hot encoding for the same pipeline and then further aggregate across datasets using the median.
+We again only report the **best** HCT setting.
+Absolute runtimes are hard to interpret and aggregate because runtime distributions across datasets are heavily skewed as proportionally larger runtimes are observed for big datasets.
+Furthermore, while a pipeline's runtime can be dominated by the encoder for small datasets, the training of the consecutive ML algorithm is dominating for large datasets, which might render differences during encoding irrelevant.
+Therefore we aim to report what is important in practice, the time differences for training the **full pipeline**.
+The results clearly show that regularized target encoding does not consistently yield slower runtimes compared to simple strategies like indicator encoding. Reasons for this might be, that more efficient representations yielded by target encoders lead to faster runtimes of subsequent ML algorithms.
+This suggests that a possible runtime vs. predictive performance trade-off might also be in favour of target encoding, especially for large datasets where a high number of indicator variables increases computational load.
+We did observe a substantial increase in runtimes when using regularized glmm with GB, where runtimes are comparably short in comparison to the time required to fit categorical encoders. In other settings (LASSO, RF), the glmm encoder can also be faster, as it allows for a more efficient data representation for the ML algorithm.
+
+## Analysing High Cardinality Thresholds
+
+\label{sec:hct_study}
+
+```{r hct-freq, results="asis"}
+#thresh = res_max[!inds_rm_SVM][algorithm != "none", .(N10 = sum(high.card.thresh == 10),
+#  N25 = sum(high.card.thresh == 25), N125 = sum(high.card.thresh == 125)), by = c("algorithm", "lrn.id")]
+#setorder(thresh, algorithm, lrn.id)
+
+#num_thresh = res[!(problem %in% unique(svm_errors$problem) & lrn.id == "SVM")][
+#  lrn.id != "FL"][algorithm != "none"][,
+#  .N, by = c("algorithm", "lrn.id", "high.card.thresh", "dummy.enc", "num.trees", "n.folds")][
+#    n.folds == 1 | is.na(n.folds)][num.trees == 10 | is.na(num.trees)][dummy.enc == TRUE | is.na(dummy.enc)]
+#num_thresh = dcast(num_thresh, ... ~ high.card.thresh, value.var = "N")[, !c("dummy.enc", "num.trees", "n.folds"), with = FALSE]
+#setorder(num_thresh, algorithm, lrn.id)
+
+#thresh[, c("N10", "N25", "N125")] = thresh[, c("N10", "N25", "N125")]/num_thresh[, c("10", "25", "125")]
+#thresh[, c("N10", "N25", "N125")] = thresh[, lapply(.SD, round, digits = 2), .SDcols = c("N10", "N25", "N125")]
+#thresh[, c("N10", "N25", "N125")] = thresh[, lapply(.SD, function(x)x*100), .SDcols = c("N10", "N25", "N125")]
+
+#thresh[, HCT := paste(N10, N25, N125, sep = ",")]
+#thresh = setnames(dcast(thresh, algorithm ~ lrn.id, value.var = "HCT"), "algorithm", "Encoder")
+
+#knitr::kable(thresh)
+```
+
+Until now, we ignored the HCT parameter by reporting only the condition with the best performance.
+An interesting question was whether target encoding is only useful for features with a very high number of levels or if it might also have advantages for fewer levels, where most practitioners would routinely use indicator encoding.
+We tested this using HCT thresholds of $10$, $25$ and $125$.
+In general, the optimal threshold seemed to strongly depend on the dataset, but we also observed some weak patterns:
+LASSO improved for larger HCT, indicating that its internal regularization can efficiently deal with the sparseness induced by indicator encoding.
+In comparison, other methods generally yielded better performance if features above the very low HCT of $10$ were encoded using one of the target encoding strategies.
+Furthermore, different regularization strategies for the target based encoders seemed not to prefer strongly different HCT values.
+
+
+Discussion
+==========
+
+In our benchmark, we compared encoding strategies for high cardinality features on a variety of regression, binary and multiclass classification datasets with different ML algorithms.
+Regularized target encoding (glmm) was superior across most datasets and ML algorithms.
+Although the performance of other encoding strategies was comparable in some conditions, target encoding was never outperformed.
+In general, our results suggest that regularized target encoding works well for all kinds of algorithms and should be considered when working with high cardinality features.
+In terms of runtime, using target encoding together with 5-fold CV sometimes leads to slightly longer runtimes (in comparison to indicator encoding), but especially for larger datasets this is often offset by the more efficient representation yielded from target encoding.
+
+What constitutes a "high" cardinality problem is a difficult question that might not only depend on the number of levels but also other characteristics of the dataset and its features. Unfortunately, the number of datasets in our study was too small to discover consistent patterns between encoder performance and dataset characteristics.
+Target encoding features with as little as 10 levels seemed to be effective in a substantive number of conditions, but for other datasets, higher HCT values performed better.
+Thus, some form of hyperparameter tuning seems necessary to decide the level threshold for target encoding at this point, as no suitable defaults seem to be available.
+Note that we compared different HCT values but then used the same encoding strategy for all affected features alongside one-hot encoding for the remaining ones.
+Although this strategy is reasonable, it might be beneficial to decide whether to use target encoding on a feature by feature basis.
+ML pipelines could introduce a categorical hyperparameter for each feature that represents which encoding is used.
+To make this complicated meta optimization problem feasible, only a small number of encoders can be included.
+Our study can help to decide which encoders could be safely omitted from consideration.
+
+## Limitations
+
+In our study, several decisions were necessary to make answering our research questions technically and computationally feasible.
+First, we only used minimal tuning for our ML algorithms, as we were not interested in comparing their performance against each other.
+This probably led to suboptimal performance for the GB, KNN, and SVM learners.
+When interpreting our results, we assume that the encoder rankings are comparable when more extensive tuning is used.
+This seems plausible, considering the high stability of our meta rankings between algorithms.
+We only use 5-fold-CV without repetitions to estimate predictive performance, but due to a small variance between folds, we could confidently detect performance differences of encoders for many datasets.
+As we are interested in model-agnostic methods that can be combined with any supervised ML algorithm, we do not investigate several strategies proposed in the recent literature [@guo_2016; @prokhorenkova_2018].
+Additionally, we only investigate univariate encodings, i.e. we always encode each variable separately.
+Levels with comparable main effects can therefore not be distinguished based on the transformed feature, which prevents the consecutive ML algorithm from learning interactions for specific levels.
+Methods that can jointly encode several variables and therefore leverage correlation structures between the different variables are an interesting avenue of research in the future. Another interesting avenue is using target-based encoding strategies to learn a vector-valued representation of a level, similar to entity embeddings [@guo_2016].
+We furthermore only investigate traditional categorical variables and do not extend our analysis to multi-categorical variables or text-strings [@cerda_2018; @cerda_2020], where other encoding techniques can harvest additional information.
+
+
+## Conclusion
+
+This benchmark study compared the predictive performance of a variety of strategies to encode categorical features with a high number of unordered levels for different supervised machine learning algorithms.
+Regularized versions of target encoding, which uses predictions of the target variable as numeric feature values, performed better than traditional strategies like integer or indicator encoding.
+Most effective was a target encoder which combines simple generalized linear mixed models with cross-validation and does not require tuning hyperparameters.
+
+Acknowledgements {-}
+==========
+This work has been funded by the German Federal Ministry of Education and Research (BMBF) under Grant No. 01IS18036A and by the Bavarian Ministry of Economic Affairs, Regional Development and Energy through the Center for Analytics – Data – Applications (ADA-Center) within the framework of „BAYERN DIGITAL II“ (20-3410-2-9-8).
+The authors of this work take full responsibilities for its content.
+
+Declarations of interest: none
+
+References {#references .unnumbered}
+==========
+\raggedright

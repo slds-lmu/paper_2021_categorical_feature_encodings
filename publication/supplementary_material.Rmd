@@ -1,0 +1,434 @@
+---
+title: |
+  | Supplementary Material\:
+  | Regularized target encoding outperforms traditional methods in supervised machine learning with high cardinality features
+numbersections: true
+csl: elsevier-harvard.csl
+output: pdf_document
+header-includes:
+   - \usepackage{algorithm}
+   - \usepackage{array}
+   - \usepackage[noend]{algpseudocode}
+   - \usepackage{amsmath}
+   - \usepackage{amssymb}
+   - \usepackage{amsfonts}
+   - \usepackage{mathtools}
+   - \usepackage{bm}
+   - \usepackage{tikz}
+   - \usepackage{threeparttable}
+   - \usepackage{booktabs}
+   - \usetikzlibrary{trees,arrows, chains, fit, positioning, calc, shapes, shadows}
+   - \setlength\parindent{0pt}
+   - \usepackage{pdflscape}
+   - \usepackage{float}
+---
+
+# Implementations
+
+Feature encoding techniques are implemented in several general preprocessing packages.
+We provide an overview of existing implementations for R in Table \ref{tab:impls}.
+For python, an extension to scikit-learn [@pedregosa_2011], *category encoders* [@will_mcginnis_2018_1157110] is available.
+To enable a fair and reliable comparison in our study, we implemented all methods outlined above on top of the `mlrCPO` package.
+All code can be found in our **online repository** \footnote{\url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}}.
+
+\begin{table}
+\centering
+\begin{tabular}{|ccp{0.43\linewidth}|}
+\hline
+encoding method  & regularization & package \\
+\hline
+indicator        & --                &  \tt{stats} \newline \tt{embed}  \newline \tt{mlrCPO} \newline \tt{mlr3pipelines} \\
+\hline
+hash             & --                &  \tt{FeatureHashing} \newline \tt{embed} \\
+\hline
+impact           & smoothing         & \tt{embed} \newline \tt{mlrCPO} \newline \tt{mlr3pipelines} \\
+\hline
+impact           & cross-validation  & \tt{vtreat} \newline \texttt{mlr3pipelines} (via vtreat) \\
+\hline
+regularized impact (glmm) & --            & \tt{embed} \newline \tt{mlr3pipelines} \\
+\hline
+\end{tabular}
+\caption{
+  Overview over existing encoding implementations in R. Implementations can deviate from the algorithms described in section \ref{sec:methods} by minor implementation details.
+  Indicator encoding encloses a variety of methods (one-hot, dummy, helmert encoding etc.)}
+\label{tab:impls}
+\end{table}
+
+# Pseudocode for all encoding strategies \label{algos}
+
+Algorithm $1$ to $10$ contain the pseudocode for all encoding strategies studied in our manuscript in order to improve reproducibility and to provide further hints towards subtle differences in encoders and implementations.
+
+
+\begin{algorithm}[H]
+  \caption{Integer Encoding}
+  \begin{algorithmic}
+    \State \underline{Training:}
+    \State compute random permutation $\boldsymbol{int} = (int_1, \dots, int_k, \dots, int_L)^T$ of $(1, \dots, L)^T$
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}\ {$\hat{x}^{train}_i = int_k$ with $x^{train}_i = l_k$, $k = 1, \dots, L$}
+      \EndFor
+    \State \underline{Prediction:}
+      \For{$x^{new}$}
+        \State \algorithmicif\ {$x^{new} \in \mathcal{L}^{train}$}\ \algorithmicthen\ {$\hat{x}^{new} = int_k$ with $x^{new} = l_k$, $k = 1, \dots, L$}\ \algorithmicelse\ {$\hat{x}^{new} = NA$}
+      \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{Frequency Encoding}
+  \begin{algorithmic}
+    \State \underline{Training:}
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}\ {$\hat{x}^{train}_i = \frac{N_l}{N}$ with $x^{train}_i = l$}
+      \EndFor
+    \State \underline{Prediction:}
+      \For{$x^{new}$}
+        \State \algorithmicif\ {$x^{new} \in \mathcal{L}^{train}$}\ \algorithmicthen\ {$\hat{x}^{new} = \frac{N_l}{N}$ with $x^{new} = l$}\ \algorithmicelse\ {$\hat{x}^{new} = 1$}
+      \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{One-Hot Encoding}
+  \begin{algorithmic}
+    \State \underline{Training:}
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        \ForAll{$l \in \mathcal{L}^{train}$}\ $\hat{x}^{train}_{il} = I(x^{train}_i = l)$
+        \EndFor
+      \EndFor
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+      \ForAll{$l \in \mathcal{L}^{train}$}
+        \State \algorithmicif\ {$x^{new} \in \mathcal{L}^{train}$}\ \algorithmicthen\ {$\hat{x}^{new}_l = I(x^{new} = l)$}\ \algorithmicelse\ {$\hat{x}^{new}_l = 0$}
+      \EndFor
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{Dummy Encoding}
+  \begin{algorithmic}
+    \State \underline{Training:}
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        \ForAll{$l \in \mathcal{L}^{train} \setminus l_{ref}$}\ {$\hat{x}^{train}_{il} = I(x^{train}_i = l)$}
+        \EndFor
+      \EndFor
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+      \ForAll{$l \in \mathcal{L}^{train} \setminus l_{ref}$}
+        \State \algorithmicif\ {$x^{new} \in \mathcal{L}^{train}$}\ \algorithmicthen\ {$\hat{x}^{new}_l = I(x^{new} = l)$}\ \algorithmicelse\ {$\hat{x}^{new}_l = NA$}
+      \EndFor
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{Hash Encoding}
+  \begin{algorithmic}
+    \State \underline{Training:} require $hash.size \in \mathbb{N}$
+      \ForAll{$l \in \mathcal{L}^{train}$}\ {$ind_l = (hash(l) \mod hash.size) + 1$, $ind_l \in \mathbb{N}$, $hash(l) \in \mathbb{N}$}
+      \EndFor
+    \State 1. define matrix $\boldsymbol{D}^{N \times hash.size}$ with $d_{ih} = 1$ if $ind_l = h$ and $d_{ih} = 0$ if $ind_l \neq h$, $x^{train}_i = l$
+    \State 2. $\boldsymbol{D} \rightarrow \tilde{\boldsymbol{D}}^{N \times V}$ with $V \leq hash.size$, by dropping constant columns in $\boldsymbol{D}$
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}\ {$\hat{x}^{train}_{iv} = \tilde{d}_{iv}$}
+      \EndFor
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+      \State $ind^{new} = (hash(x^{new}) \mod hash.size) + 1$
+      \State $\boldsymbol{d}^{new}$ of length $hash.size$ with $d^{new}_h = 1$ if $ind^{new} = h$ and $d^{new}_h = 1$ if $ind^{new} \neq h$
+      \State $\boldsymbol{d}^{new} \rightarrow \tilde{\boldsymbol{d}}^{new}$ of length $V$, by dropping columns which were constant in $\boldsymbol{D}$
+        \ForAll{$V$ columns in $\tilde{\boldsymbol{D}}$}\ {$\hat{x}^{new}_v = \tilde{d}^{new}_v$}
+        \EndFor
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{Leaf Encoding}
+  \label{alg:leaf}
+  \begin{algorithmic}
+    \State \underline{Training:} require number of cross-validation folds $K \in \mathbb{N}$
+    \State fit CART tree on $\mathcal{D}^{train}$ with complexity pruning based on $K$-fold cross-validation
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        $\tilde{x}_i = t$ with $x^{train}_i$ in terminal node $t$
+      \EndFor
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+        \If{$x^{new} \in \mathcal{L}^{train}$}\ {$\tilde{x}^{new} = t$ with $x^{new}$ in terminal node $t$}
+        \Else\ {$\tilde{x}^{new} = b$ where $b$ indicates the biggest terminal node}
+        \EndIf
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{Impact Encoding Regression}
+  \begin{algorithmic}
+    \State \underline{Training:} require smoothing parameter $\epsilon \in \mathbb{R}$
+    \ForAll{$l \in \mathcal{L}^{train}$}\ {$\delta_l = \frac{\sum_{i:x^{train}_i = l} y^{train}_i + \epsilon \cdot \bar{y}^{train}}{N_l + \epsilon} -\bar{y}^{train}$ with $\bar{y}^{train} = \frac{\sum^{N}_{i=1} y^{train}_i}{N}$}
+    \EndFor
+    \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}\ {$\hat{x}^{train}_{i} = \delta_{l}$ with $x^{train}_i = l$}
+    \EndFor
+    \State \underline{Prediction:}
+      \For{$x^{new}$}
+        \State \algorithmicif\ {$x^{new} \in \mathcal{L}^{train}$}\ \algorithmicthen\ {$\hat{x}^{new} = \delta_{l}$ with $x^{new} = l$}\ \algorithmicelse\ {$\hat{x}^{new} = 0$}
+      \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{Impact Encoding Classification}
+  \begin{algorithmic}
+    \State \underline{Training:} require smoothing parameter $\epsilon \in \mathbb{R}$
+      \ForAll{$c \in \mathcal{C}$}
+        \State $p_c = \frac{N_c}{N}$, $p^{new}_c = \frac{N_c + \epsilon}{N + 2\epsilon}$, $logit_c = \log(\frac{p_c}{1-p_c})$, $logit^{new}_c = \log(\frac{p^{new}_c}{1 - p^{new}_c})$
+        \State $\delta^{new}_c = logit^{new}_c - logit_c$
+        \ForAll{$l \in \mathcal{L}^{train}$}
+          \State $p_{lc} = \frac{\sum_{i: x^{train}_i = l} I(y^{train}_i = c) + \epsilon}{N_l + 2 \epsilon}$, $logit_{lc} = \log(\frac{p_{lc}}{1 - p_{lc}})$
+          \State $\delta_{lc} = logit_{lc} - logit_c$
+        \EndFor
+      \EndFor
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}\ {$\hat{x}^{train}_{ic} = \delta_{lc}$ with $x^{train}_i = l$}
+      \EndFor
+    \State \underline{Prediction:}
+      \For{$x^{new}$}
+        \ForAll{$c$ in $\mathcal{C}$}
+          \State \algorithmicif\ {$x^{new} \in \mathcal{L}^{train}$}\ \algorithmicthen\ {$\hat{x}^{new}_{c} = \delta_{lc}$ with $x^{new} = l$}\ \algorithmicelse\ {$\hat{x}^{new}_c = \delta^{new}_c$}
+        \EndFor
+      \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{GLMM Encoding Regression}
+  \label{alg:glmm-regr}
+  \begin{algorithmic}
+    \State \underline{Training:} require $n.folds \in \mathbb{N}$
+     \State fit simple random intercept model: $y^{train}_i = \beta_{0l} + \epsilon_{i} = \gamma_{oo} + u_l + \epsilon_{i}$ on $\mathcal{D}^{train}$
+     \State with $u_l \overset{iid}{\sim} N(0,\tau^2)$, $\epsilon_i \overset{iid}{\sim} N(0,\sigma^2)$ and $x^{train}_i = l$, $l \in \mathcal{L}^{train}$
+    \If{$n.folds = 1$}
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        \State $\hat{x}^{train}_i = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{train}_i = l$
+      \EndFor
+    \Else\ {use $n.folds$ cross-validation scheme to make training sets $\mathcal{D}^{train}_1, \dots, \mathcal{D}^{train}_{n.folds}$}
+      \State and fit simple random intercept model on each $\mathcal{D}^{train}_{m}$
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        \State $\hat{x}^{train}_i = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{train}_i = l$ based on the model m
+        \State with $(x^{train}_i, y^{train}_i) \notin \mathcal{D}^{train}_m$
+      \EndFor
+    \EndIf
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+      \If{$x^{new} \in \mathcal{L}^{train}$}
+        \State $\hat{x}^{new} = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{new} = l$ based on full model fitted on $\mathcal{D}^{train}$
+      \Else\ {$\hat{x}^{new} = \hat{\gamma}_{00}$ based on full model fitted on $\mathcal{D}^{train}$}
+      \EndIf
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{GLMM Encoding Binary Classification}
+  \label{alg:glmm-bincl}
+  \begin{algorithmic}
+    \State \underline{Training:} require $n.folds \in \mathbb{N}$
+    \State fit simple glmm: $E(y^{train}_i) = h(\eta_i) = \frac{\exp(\eta_i)}{1 + \exp(\eta_i)}$, $\eta_i = \beta_{0l} = \gamma_{00} + u_l$ on $\mathcal{D}^{train}$
+    \State with $u_l \overset{iid}{\sim} N(0,\sigma^2)$, $y^{train}_i \overset{ind}{\sim} Be(h(\eta_i))$ and $x^{train}_i = l$, $l \in \mathcal{L}^{train}$
+    \If{$n.folds = 1$}
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        \State $\hat{x}^{train}_i = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{train}_i = l$
+      \EndFor
+    \Else\ {use $n.folds$ cross-validation scheme to make training sets $\mathcal{D}^{train}_1, \dots, \mathcal{D}^{train}_{n.folds}$}
+      \State and fit simple glmm on each $\mathcal{D}^{train}_{m}$
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        \State $\hat{x}^{train}_i = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{train}_i = l$ based on the model $m$
+        \State with $(x^{train}_i, y^{train}_i) \notin \mathcal{D}^{train}_m$
+      \EndFor
+    \EndIf
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+      \If{$x^{new} \in \mathcal{L}^{train}$}
+        \State $\hat{x}^{new} = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{new} = l$ based on full model fitted on $\mathcal{D}^{train}$
+      \Else\ {$\hat{x}^{new} = \hat{\gamma}_{00}$ based on full model fitted on $\mathcal{D}^{train}$}
+      \EndIf
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{GLMM Encoding Multiclass Classification}
+  \label{alg:glmm-multcl}
+  \begin{algorithmic}
+    \State \underline{Training:} require $n.folds \in \mathbb{N}$
+    \State define response matrix $\boldsymbol{Y}^{N \times C}$ with $y_{ic} = 1$ if $y^{train}_i = c$ and $y_{ic} = 0$ if $y^{train}_i \neq c$:
+    \State $\tilde{\mathcal{D}}^{train} = \{(x^{train}_i, y^{train}_{i1}, \dots, y^{train}_{iC}), \dots, (x^{train}_N, y^{train}_{N1}, \dots, y^{train}_{NC})\}$
+    \ForAll{$C$ classes}
+      \State fit simple glmm: $E(y^{train}_{ic}) = h(\eta_i) = \frac{\exp(\eta_i)}{1 + \exp(\eta_i)}$, $\eta_i = \beta_{0l} = \gamma_{00} + u_l$ on   $\boldsymbol{y}^{train}_c$ from $\tilde{\mathcal{D}}^{train}$
+      \State with $u_l \overset{iid}{\sim} N(0,\sigma^2)$, $y^{train}_{ic} \overset{ind}{\sim} Be(h(\eta_i))$ and $x^{train}_i = l$, $l \in \mathcal{L}^{train}$
+    \EndFor
+    \If{$n.folds = 1$}
+      \ForAll{$C$ models}
+        \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+          \State $\hat{x}^{train}_{ic} = \hat{\beta}_{0l}^{\tilde{\mathcal{D}}^{train}}$ with $x^{train}_i = l$
+        \EndFor
+      \EndFor
+    \Else\ {use $n.folds$ cross-validation scheme to make training sets $\tilde{\mathcal{D}}^{train}_1, \dots, \tilde{\mathcal{D}}^{train}_{n.folds}$}
+    \ForAll{$C$ classes}
+      \State fit simple glmm on $\boldsymbol{y}^{train}_c$ from each $\tilde{\mathcal{D}}^{train}_{m}$
+      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+        \State $\hat{x}^{train}_{ic} = \hat{\beta}_{0l}^{\tilde{\mathcal{D}}^{train}}$ with $x^{train}_i = l$ based on the model $m$ for class $c$
+        \State with $(x^{train}_i, y^{train}_i) \notin \tilde{\mathcal{D}}^{train}_m$
+      \EndFor
+    \EndFor
+    \EndIf
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+      \ForAll{$C$ class models}
+        \If{$x^{new} \in \mathcal{L}^{train}$}
+          \State $\hat{x}^{new}_c = \hat{\beta}_{0l}^{\tilde{\mathcal{D}}^{train}}$ with $x^{new} = l$ based on full model for class $c$
+        \Else\ {$\hat{x}^{new}_c = \hat{\gamma}_{00}$ based on full model for class $c$}
+        \EndIf
+      \EndFor
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+*Note on GLMM Encoders:* To speed up the computation of the GLMM encoders, we followed the performance tips from the lme4 vignette (<https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html>): we did not compute derivations (`calc.derivs = FALSE`) and used the `NLOPT_LN_BOBYQA` optimizer from the nloptr package with liberal stopping criteria (`maxeval = 1000`, `xtol_abs = 1e-6`, `ftol_abs = 1e-6`).
+
+
+# Comparison of One-Hot and Dummy Encoding
+
+A frequently asked question is, whether one-hot encoding or dummy encoding is to be preferred. While dummy encoding clearly is to be preferred for non-regularized linear models in order to avoid multi-colinearity, the answer is less clear for general machine learning algorithms studied in our setting.
+
+
+```{r, include = FALSE}
+library(data.table)
+library(ggplot2)
+library(gridExtra)
+library(grid)
+library(ggpubr)
+library(papaja)
+res = readRDS("../analysis/high_cardinality_benchmark/results.rds")
+res[, algorithm := factor(algorithm,
+  levels = c("integer", "frequency", "dummy", "hash", "leaf", "cluster", "impact", "lmer", "ranger", "none", "remove"),
+  labels = c("integer", "frequency", "indicator", "hash", "leaf", "cluster", "impact", "glmm", "rf", "none", "remove"))]
+res[, lrn.id := factor(lrn.id,
+  levels = c("cvglmnet", "ranger", "xgboost.earlystop.wrap", "kknn", "liquidsvm", "featureless"),
+  labels = c("LASSO", "RF", "GB", "KNN", "SVM", "FL"))]
+indicator = res[algorithm == "indicator", .(Classes, auc.test.mean, multiclass.aunu.test.mean, rmse.test.mean),
+  keyby = c("lrn.id", "problem", "high.card.thresh", "dummy.enc")]
+indicator = dcast(indicator, ... ~ dummy.enc, value.var = c("auc.test.mean", "multiclass.aunu.test.mean", "rmse.test.mean"))
+indicator[Classes == 2 & !is.na(auc.test.mean_FALSE > auc.test.mean_TRUE),
+  oneh_beats_dummy := auc.test.mean_FALSE > auc.test.mean_TRUE, by = "lrn.id"]
+indicator[Classes > 2 & !is.na(multiclass.aunu.test.mean_FALSE > multiclass.aunu.test.mean_TRUE),
+  oneh_beats_dummy := multiclass.aunu.test.mean_FALSE > multiclass.aunu.test.mean_TRUE, by = "lrn.id"]
+indicator[Classes == 0 & !is.na(rmse.test.mean_FALSE < rmse.test.mean_TRUE),
+  oneh_beats_dummy := rmse.test.mean_FALSE < rmse.test.mean_TRUE, by = "lrn.id"]
+```
+
+```{r oneh-win, echo = FALSE, results="asis"}
+oneh_win = indicator[Classes == 2 & !is.na(auc.test.mean_FALSE > auc.test.mean_TRUE),
+  .(BinCl = sum(auc.test.mean_FALSE > auc.test.mean_TRUE)/.N*100), by = "lrn.id"][
+indicator[Classes > 2 & !is.na(multiclass.aunu.test.mean_FALSE > multiclass.aunu.test.mean_TRUE),
+  .(MultCl = sum(multiclass.aunu.test.mean_FALSE > multiclass.aunu.test.mean_TRUE)/.N*100), by = "lrn.id"],
+    on = "lrn.id"][
+indicator[Classes == 0 & !is.na(rmse.test.mean_FALSE < rmse.test.mean_TRUE),
+  .(Regr = sum(rmse.test.mean_FALSE < rmse.test.mean_TRUE)/.N*100), by = "lrn.id"],
+      on = "lrn.id"]
+setnames(oneh_win, "lrn.id", "Learner")
+setnames(oneh_win, "BinCl", "Binary Class")
+setnames(oneh_win, "MultCl", "Multi Class")
+setnames(oneh_win, "Regr", "Regression")
+apa_table(oneh_win, digits = 0,
+  caption = "Win Percentages of One-hot over Dummy Encoding",
+  note = "Percentage of encoding conditions in which one-hot performs better than dummy per task setting.")
+```
+
+From the results shown in\ref{fig:oneh-win} we can observe, that for most algorithms and datasets, one-hot encoding is to be preferred over dummy-encoding.
+
+# Additional encoders not mentioned in the manuscript
+
+In addition to the encoders mentioned in the manuscript, the benchmark results available in our online repository (<https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings>) contain two additional experimental encoders that were newly developed. We do not mention them in our manuscript because they did not perform well, and in hindsight, we are not satisfied with their design. We briefly mention them here for transparency.
+
+\begin{algorithm}[H]
+  \caption{Cluster Encoding}
+  \label{alg:cluster}
+  \begin{algorithmic}
+    \State \underline{Training:} require number of desired levels $V \in \mathbb{N}$
+    \If{task is regression}
+      \ForAll{$l \in \mathcal{L}^{train}$}\ {$\bar{y}^{train}_l = \frac{\sum_{i:x^{train}_i = l} y^{train}_i}{N_l}$}
+      \State define $\boldsymbol{v}_l = (\bar{y}^{train}_l, \delta_l)^T$ with $\delta_l = \left| N_l - \frac{\sum^{L}_{k=1} N_k}{L} \right|$
+      \EndFor
+    \EndIf
+    \If{task is classification}
+      \ForAll{$l \in \mathcal{L}^{train}$}
+        \ForAll{$c \in \mathcal{C}$}\ {$s_{lc} = \sum_{i: x^{train}_i = l} I(y^{train}_i = c)$}
+        \EndFor
+        \State define $\boldsymbol{v}_l = (s_{l1}, \dots, s_{lC}, \delta_l)^T$ with $\delta_l = \left| N_l - \frac{\sum^{L}_{k=1} N_k}{L} \right|$
+      \EndFor
+    \EndIf
+    \State 1. compute distance matrix $\boldsymbol{D}^{L \times L}$ with $d_{jk} = \left|\left|\boldsymbol{v}_j - \boldsymbol{v}_k\right|\right|$
+    \State 2. fit hierarchical cluster analysis on $\boldsymbol{D}$
+    \State 3. prune dendrogram to obtain $V$ combined levels
+    \item[]
+    \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}\ {$\tilde{x}^{train}_i = v$ with $x^{train}_i$ in leaf $v$}
+    \EndFor
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+        \State \algorithmicif\ {$x^{new} \in \mathcal{L}^{train}$}\ \algorithmicthen\ {$\tilde{x}^{new} = v$ with $x^{new}$ in leaf $v$}\ \algorithmicelse\ {$\tilde{x}^{new} = NA$}
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{RF Encoding Regression and Binary Classification}
+  \label{alg:rf-regrbincl}
+  \begin{algorithmic}
+    \State \underline{Training:} require number of trees $B \in \mathbb{N}$
+    \State fit random forest with trees $T_1, ..., T_B$
+    \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+      \If{$x^{train}_i$ inbag for all $B$ trees}\ {$\hat{x}^{train}_i = \frac{1}{B}\sum^B_{b=1}T_b(x^{train}_i)$}
+      \EndIf
+      \State \algorithmicelse\ {$\hat{x}^{train}_i = \frac{1}{B^{OOB}_i}\sum_{b:\ x^{train}_i\ OOB\ T_b}T_b(x^{train}_i)$}
+    \EndFor
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+      \If{$x^{new} \in \mathcal{L}^{train}$}\ {$\hat{x}^{new} = \frac{1}{B}\sum^B_{b=1}T_b(x^{new})$}
+      \EndIf
+      \State \algorithmicelse\ $\hat{x}^{new} =  \frac{1}{B} \sum^B_{b=1} \frac{1}{L} \sum_{l \in \mathcal{L}^{train}} T_b(l)$
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+  \caption{RF Encoding Multiclass Classification}
+  \label{alg:rf-multcl}
+  \begin{algorithmic}
+    \State \underline{Training:} require number of trees $B \in \mathbb{N}$
+    \State fit random forest with trees $T_1, ..., T_B$
+    \ForAll{$C$ classes}
+    \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
+      \If{$x^{train}_i$ inbag for all $B$ trees}\ {$\hat{x}^{train}_{ic} = \frac{1}{B}\sum^B_{b=1}T^c_b(x^{train}_i)$}
+      \EndIf
+      \State \algorithmicelse\ {$\hat{x}^{train}_{ic} = \frac{1}{B^{OOB}_i}\sum_{b:\ x^{train}_i\ OOB\ T_b}T^c_b(x^{train}_i)$}
+    \EndFor
+    \EndFor
+    \State \underline{Prediction:}
+    \For{$x^{new}$}
+    \ForAll{$C$ classes}
+      \If{$x^{new} \in \mathcal{L}^{train}$}\ {$\hat{x}^{new}_c = \frac{1}{B}\sum^B_{b=1}T^c_b(x^{new})$}
+      \EndIf
+      \State \algorithmicelse\ $\hat{x}^{new}_c =  \frac{1}{B} \sum^B_{b=1} \frac{1}{L} \sum_{l \in \mathcal{L}^{train}} T^c_b(l)$
+    \EndFor
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\clearpage
+
+## Additional datasets not mentioned in the manuscript
+
+In addition to the datasets mentioned in the manuscript, the benchmark results available in our online repository (<https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings>) contain three additional datasets: *KDD98* (OmlId: 41435), *sf-police-incidents* (OmlId: 41436), *Traffic_violations* (OmlId: 41443).
+A substantive amount of conditions failed for those rather big datasets due to memory problems, which is why we remove them from the results discussed in our manuscript. We briefly mention them here to provide full transparency.
+
+References {#references .unnumbered}
+==========
+\raggedright
