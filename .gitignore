@@ -5,20 +5,10 @@
 
 .DS_Store
 
-data/
-
-*.pdf
 *.html
 *.Rproj
 
-factor_encoding.Rproj
-packrat/lib*/
-packrat/src/
-
-doc/high_card_final_datasets_cache/
-analysis/high_cardinality_benchmark/registry/
-
 *.log
 *.tex
-*.rds
-*.md
+
+analysis/high_cardinality_benchmark/registry/
