@@ -839,7 +839,7 @@ The symmetric difference between two relations is the number of cases one encodi
 This procedure resulted in the meta rankings based on the consensus ranking for each ML algorithm detailed in Figure \ref{fig:rank-res}.
 
 
-(ref:rank-res) Consensus rankings across all datasets for each algorithm. Lower ranks indicate better performance. The rank of the *none* control condition of the random forest (rank 11) was omitted from the figure. 
+(ref:rank-res) Consensus rankings across all datasets for each algorithm. Lower ranks indicate better performance. The rank of the *none* control condition of the random forest (rank 11) was omitted from the figure.
 
 ```{r, rank-res, out.height=".55\\textwidth", fig.cap='(ref:rank-res)', out.width="\\textwidth"}
 plotdt = rbindlist(lapply(names(cons_list), function(x) {
@@ -848,8 +848,27 @@ plotdt = rbindlist(lapply(names(cons_list), function(x) {
 }))
 set(plotdt, which(plotdt$method == "remove" & plotdt$algorithm == "RF"), "rank", 11)
 plotdt = plotdt[-which(plotdt$method == "none"),]
+
+swit = Vectorize(function(x) {
+  switch(x,
+  "frequency" = "frq",
+  "one-hot" = "oh",
+  "remove" = "rm",
+  "integer" = "int",
+  "dummy" = "dumm",
+  "leaf" = "leaf",
+  "impact" = "imp",
+  "glmm-10CV" = "CV10",
+  "glmm-5CV" = "CV5",
+  "glmm-noCV" = "noCV",
+  "hash" = "hash"
+)})
+plotdt$lab = unlist(swit(plotdt$method))
+
 p = ggplot(plotdt, aes(x = rank, y = algorithm, fill = method)) +
- geom_tile(size = .5, width =.93, height =.93, color = "black")
+ geom_tile(size = .5, width =.93, height =.93, color = "black") +
+ geom_text(aes(x=rank, y = algorithm, label=lab), size = 3)
+
 p = p +
   theme_minimal() +
   theme(
