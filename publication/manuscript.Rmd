@@ -1,44 +1,37 @@
 ---
 title: Regularized target encoding outperforms traditional methods in supervised machine learning with high cardinality features
-author:
-  - name: Florian Pargent
+titlerunning: Encoding high cardinality features in supervised ML
+authors:
+  - name: Florian Pargent \orcidlink{0000-0002-2388-553X}
     email: florian.pargent@psy.lmu.de
-    affiliation: LMU Munich 1
+    address: Department of Psychology, Psychological Methods and Assessment, LMU Munich, Leopoldstraße 13, 80802 Munich, Germany
     footnote: 1
   - name: Florian Pfisterer
-    #email: florian.pfisterer@stat.uni-muenchen.de
-    affiliation: LMU Munich 2
-  - name: Janek Thomas
-    #email: janek.thomas@iis.fraunhofer.de
-    affiliation: Fraunhofer
-  - name: Bernd Bischl
-    #email: bernd.bischl@stat.uni-muenchen.de
-    affiliation: LMU Munich 2
-address:
-  - code: LMU Munich 1
-    address: Department of Psychology, Psychological Methods and Assessment, LMU Munich, Leopoldstraße 13, 80802 Munich, Germany
-  - code: LMU Munich 2
     address: Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany
-  - code: Fraunhofer
+  - name: Janek Thomas \orcidlink{0000-0003-4511-6245}
     address: Fraunhofer Institute for Integrated Circuits, Hansastraße 32, 8068 Munich, Germany
-footnote:
-  - code: 1
-    text: "Corresponding Author"
+  - name: Bernd Bischl \orcidlink{0000-0001-6002-6980}
+    address: Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany
+
 abstract: |
   Because most machine learning (ML) algorithms are designed for numerical inputs, efficiently encoding categorical variables is a crucial aspect during data analysis. An often encountered problem are high cardinality features, i.e. unordered categorical predictor variables with a high number of levels. We study techniques that yield numeric representations of categorical variables which can then be used in subsequent ML applications. We focus on the impact of those techniques on a subsequent algorithm's predictive performance, and -- if possible -- derive best practices on when to use which technique. We conducted a large-scale benchmark experiment, where we compared different encoding strategies together with five ML algorithms (lasso, random forest, gradient boosting, k-nearest neighbours, support vector machine) using datasets from regression, binary- and multiclass- classification settings. Throughout our study, regularized versions of target encoding (i.e. using target predictions based on the feature levels in the training set as a new numerical feature) consistently provided the best results. Traditional encodings that make unreasonable assumptions to map levels to integers (e.g. integer encoding) or to reduce the number of levels (possibly based on target information, e.g. leaf encoding) before creating binary indicator variables (one-hot or dummy encoding) were not as effective.
-keywords: supervised machine learning, benchmark, high-cardinality categorical features, target encoding, impact encoding, dummy encoding
+keywords:
+- supervised machine learning
+- benchmark
+- high-cardinality categorical features
+- target encoding
+- impact encoding
+- dummy encoding
 
-journal: "Computational Statistics and Data Analysis"
-date: "`r Sys.Date()`"
+#date: "`r Sys.Date()`"
 bibliography: literature.bib
 #linenumbers: true
 numbersections: true
-csl: elsevier-harvard.csl
 output:
   #rticles::elsevier_article: default
   bookdown::pdf_book:
-    base_format: rticles::elsevier_article
-#output: rticles::elsevier_article
+    base_format: rticles::springer_article
+bibstyle: spphys
 
 header-includes:
    - \usepackage{algorithm}
@@ -54,6 +47,8 @@ header-includes:
    - \usetikzlibrary{trees,arrows, chains, fit, positioning, calc, shapes, shadows}
    - \setlength\parindent{0pt}
    - \usepackage{pdflscape}
+   - \usepackage[T1]{fontenc}
+   - \usepackage{orcidlink}
 ---
 
 <!--
