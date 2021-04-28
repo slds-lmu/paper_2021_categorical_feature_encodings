@@ -31,7 +31,8 @@ output:
   #rticles::elsevier_article: default
   bookdown::pdf_book:
     base_format: rticles::springer_article
-bibstyle: spphys
+#bibstyle: spphys
+csl: elsevier-harvard.csl
 
 header-includes:
    - \usepackage{algorithm}
