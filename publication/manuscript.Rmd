@@ -1055,14 +1055,20 @@ This benchmark study compared the predictive performance of a variety of strateg
 Regularized versions of target encoding, which uses predictions of the target variable as numeric feature values, performed better than traditional strategies like integer or indicator encoding.
 Most effective, with a consistent superior performance across Ml algorithms and datasets, was a target encoder which combines simple generalized linear mixed models with cross-validation and does not require tuning hyperparameters.
 
-Acknowledgements {-}
-==========
-This work has been funded by the German Federal Ministry of Education and Research (BMBF) under Grant No. 01IS18036A and by the Bavarian Ministry of Economic Affairs, Regional Development and Energy through the Center for Analytics – Data – Applications (ADA-Center) within the framework of „BAYERN DIGITAL II“ (20-3410-2-9-8).
-The authors of this work take full responsibilities for its content.
+## Declarations
 
-Declarations of interest {-}
-==========
-none
+### Funding
+This work has been funded by the German Federal Ministry of Education and Research (BMBF) under Grant No. 01IS18036A and by the Bavarian Ministry of Economic Affairs, Regional Development and Energy through the Center for Analytics – Data – Applications (ADA-Center) within the framework of „BAYERN DIGITAL II“ (20-3410-2-9-8).
+
+### Conflicts of Interest
+None.
+
+### Availability of Data and Material
+\url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}
+
+### Code Availability
+\url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}
+
 
 References {#references .unnumbered}
 ==========
