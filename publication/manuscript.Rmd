@@ -1058,11 +1058,11 @@ This work has been funded by the German Federal Ministry of Education and Resear
 ### Conflicts of Interest
 None.
 
-### Availability of Data and Material
-\url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}
-
 ### Code Availability
 \url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}
+
+### Availability of Data and Material
+Our analysis code downloads all benchmark datasets from \url{https://www.openml.org/}.
 
 
 References {#references .unnumbered}
