@@ -6,7 +6,7 @@ authors:
     email: florian.pargent@psy.lmu.de
     address: Department of Psychology, Psychological Methods and Assessment, LMU Munich, Leopoldstraße 13, 80802 Munich, Germany
     footnote: 1
-  - name: Florian Pfisterer
+  - name: Florian Pfisterer \orcidlink{0000-0001-8867-762X}
     address: Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany
   - name: Janek Thomas \orcidlink{0000-0003-4511-6245}
     address: Fraunhofer Institute for Integrated Circuits, Hansastraße 32, 8068 Munich, Germany
