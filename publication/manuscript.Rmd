@@ -1059,9 +1059,9 @@ This work has been funded by the German Federal Ministry of Education and Resear
 None.
 
 ### Code Availability
-\url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}
+All analysis code is available from \url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}
 
-### Availability of Data and Material
+### Availability of Data
 Our analysis code downloads all benchmark datasets from \url{https://www.openml.org/}.
 
 
