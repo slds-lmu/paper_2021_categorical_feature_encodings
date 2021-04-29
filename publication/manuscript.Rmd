@@ -848,7 +848,11 @@ plotdt = rbindlist(lapply(names(cons_list), function(x) {
 }))
 set(plotdt, which(plotdt$method == "remove" & plotdt$algorithm == "RF"), "rank", 11)
 plotdt = plotdt[-which(plotdt$method == "none"),]
-
+plotdt$method = factor(plotdt$method,
+ levels = c("integer", "frequency", "dummy", "one-hot", "hash", "leaf", "impact",
+    "glmm-noCV", "glmm-5CV", "glmm-10CV", "remove")
+)
+plotdt[, lab := method]
 swit = Vectorize(function(x) {
   switch(x,
   "frequency" = "frq",
@@ -863,11 +867,12 @@ swit = Vectorize(function(x) {
   "glmm-noCV" = "noCV",
   "hash" = "hash"
 )})
-plotdt$lab = unlist(swit(plotdt$method))
+levels(plotdt$lab) = unlist(swit(levels(plotdt$method)))
 
 p = ggplot(plotdt, aes(x = rank, y = algorithm, fill = method)) +
  geom_tile(size = .5, width =.93, height =.93, color = "black") +
- geom_text(aes(x=rank, y = algorithm, label=lab), size = 3)
+ geom_text(aes(x=rank, y = algorithm, label=lab), size = 3) +
+ scale_fill_manual(values = box_colors)
 
 p = p +
   theme_minimal() +
