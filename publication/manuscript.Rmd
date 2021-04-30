@@ -20,8 +20,9 @@ keywords:
 - benchmark
 - high-cardinality categorical features
 - target encoding
-- impact encoding
 - dummy encoding
+- generalized linear mixed models
+
 
 #date: "`r Sys.Date()`"
 bibliography: literature.bib
