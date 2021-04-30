@@ -841,7 +841,7 @@ This procedure resulted in the meta rankings based on the consensus ranking for 
 
 (ref:rank-res) Consensus rankings across all datasets for each algorithm. Lower ranks indicate better performance. The rank of the *none* control condition of the random forest (rank 11) was omitted from the figure.
 
-```{r, rank-res, out.height=".55\\textwidth", fig.cap='(ref:rank-res)', out.width="\\textwidth"}
+```{r, rank-res, out.height=".55\\textwidth", fig.cap='(ref:rank-res)', out.width="\\textwidth", message = FALSE}
 plotdt = rbindlist(lapply(names(cons_list), function(x) {
   r = relation_class_ids(cons_list[[x]][[1]])
   data.frame(method = names(r), rank = r, algorithm = x)
