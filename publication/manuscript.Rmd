@@ -174,7 +174,7 @@ Another line of work studies variable encodings employed within specific ML mode
 @prokhorenkova_2018 compared their new CatBoost variant of target encoding to smoothed target encoding with no CV, hold-out, and leave-one-out CV on $8$ datasets.
 While the CatBoost method performed best, hold-out came second and target encoding without CV performed worst.
 An overview of encoding techniques tailored to be used together with Neural Networks is provided in @hancock.
-Amongst others, they survey indicator-based methods as well as embedding-based methods but do not conduct a benchmark study.
+They present a survey of indicator-based and embedding-based methods but do not conduct a benchmark study.
 One widely adopted approach, in particular, has been proposed by @guo_2016 under the term *entity embeddings*.
 In contrast, our work focuses on high cardinality variables and techniques that are agnostic to the subsequent ML method, which has not been done before.
 We furthermore study this problem on a sufficiently large variety of datasets and settings to allow for more compelling conclusions.
@@ -502,7 +502,7 @@ It is not trivial and was carefully designed to ensure consistent results for ex
 
 ## Performance Evaluation
 
-Throughout our analysis, we use implementations of the various methods for the open-source statistical software R [@r_2018]. To enable a fair and reliable comparison in our study, we implemented all encoding methods on top of the `mlrCPO` package [@binder_2018].
+Throughout our analysis, we use implementations of the various methods for the open-source statistical software R [@r_2021]. To enable a fair and reliable comparison in our study, we implemented all encoding methods on top of the `mlrCPO` package [@binder_2018].
 The pre-processing, as well as the final ML algorithm described in \ref{sec:pipeline}, were trained and resampled using the `mlr` framework [@bischl_2016] together with the `batchtools` package [@lang_2017] to scale the benchmark analysis to HPC compute infrastructure.
 All materials for this study, including reproducible code for this manuscript and the necessary result objects can be downloaded from our **online repository** \footnote{\url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}}.
 
@@ -760,6 +760,10 @@ dat_max[Classes > 2, mes1 := multiclass.aunu]
 dat_max = dat_max[!(lrn.id == "SVM" & problem %in% unique(svm_errors$problem))]
 dat_max = dat_max[lrn.id != "FL"]
 
+## Reviewer Question: repeat consensus relation analyses for each task type?
+# dat_max = dat_max[Classes == 0]
+## unfortunately, consensus relations do not converge then...
+
 ## t-test for cross-validation (nadeau & bengio, 2000)
 t.test.cor.paired = function(x1, x2, N, alpha = 0.05, lower.tail = FALSE) {
   n = n.folds = length(x1)
@@ -908,7 +912,7 @@ p
 -->
 
 Although the presented solutions of the optimization problem are not unique, rankings were highly stable for the high and low ranks. Meta rankings seem to be highly consistent with the individual patterns of encoder performances reflected in Figures \@ref(fig:regr-res) to \@ref(fig:multcl-res).
-Looking at meta-rankings, approaches based on GLMM's in combination with cross-validation outperform all other approaches across all algorithms. A further interesting detail omited in Figure \ref{fig:rank-res} for clarity is that the \textit{none} encoding strategy for the random forest was beaten by all strategies except for the \textit{remove} condition. This implies, that even if the algorithm includes a mechanic for treating categorical variables, it might often be optimal to use a different strategy instead.
+Looking at meta-rankings, approaches based on GLMM's in combination with cross-validation outperform all other approaches across all algorithms. A further interesting detail omitted in Figure \ref{fig:rank-res} for clarity is that the \textit{none} encoding strategy for the random forest was beaten by all strategies except for the \textit{remove} condition. This implies, that even if the algorithm includes a mechanic for treating categorical variables, it might often be optimal to use a different strategy instead.
 
 In an additional exploratory analysis, we tried to find clusters of datasets, which show systematic patterns of encoder performance (independent of the employed ML algorithm).
 We computed a partial-order consensus relation across ML algorithms for each dataset and hierarchically clustered the dataset consensus relations using the symmetric difference distance in combination with the complete linkage agglomeration method.
