@@ -922,7 +922,7 @@ The first 9 datasets from the top of the dendrogram are characterized by a mediu
 For the next 13 datasets which contain the smallest number of levels, traditional encodings can compete with target encoding.
 This biggest cluster also includes 9 datasets with zero distances, in which no significant performance differences could be observed between any encoding conditions (nor with the remove condition, indicating that high cardinality features are not very informative).
 The last two datasets with the highest number of levels formed a separate cluster, in which target encoding without strong regularization (impact, glmm-noCV) showed severe overfitting.
-Note that clusters were not determined by problem type, again suggesting that encoder rankings are somewhat similar for regression and classification settings.
+Note that clusters were not determined by problem type, again suggesting that encoder rankings are somewhat similar for regression and classification settings.\footnote{We tried to corroborate this observation by comparing meta-rankings between problem types. Unfortunately, problem type specific consensus relations did not converge (probably due to the reduced number of datasets) and were uninterpretable.}
 
 (ref:dendro) Hierarchical cluster analysis of benchmark datasets. The symmetric difference distance between two datasets reflects differences in performance patterns between encodings (independent of the employed ML algorithm).
 
