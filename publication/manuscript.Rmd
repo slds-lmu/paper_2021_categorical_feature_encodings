@@ -1070,7 +1070,9 @@ We only use 5-fold-CV without repetitions to estimate predictive performance, bu
 As we are interested in model-agnostic methods that can be combined with any supervised ML algorithm, we do not investigate several strategies proposed in the recent literature [@guo_2016; @prokhorenkova_2018].
 Additionally, we only investigate univariate encodings, i.e. we always encode each variable separately.
 Levels with comparable main effects can therefore not be distinguished based on the transformed feature, which prevents the consecutive ML algorithm from learning interactions for specific levels.
-Methods that can jointly encode several variables and therefore leverage correlation structures between the different variables are an interesting avenue of research in the future. Another interesting avenue is using target-based encoding strategies to learn a vector-valued representation of a level, similar to entity embeddings [@guo_2016].
+Methods that can jointly encode several variables and therefore leverage correlation structures between the different variables are an interesting avenue of research in the future:
+Recent approaches use target-based encoding strategies to learn a vector-valued representation of a level, similar to entity embeddings [@guo_2016].
+Those should be compared to classical approaches from the optimal scaling literature [e.g. @deleeuw_1976] leading to the *aspect* framework [@mair_2010], which is unfortunately unfamiliar to many ML researchers.
 We furthermore only investigate traditional categorical variables and do not extend our analysis to multi-categorical variables or text-strings [@cerda_2018; @cerda_2020], where other encoding techniques can harvest additional information.
 
 
