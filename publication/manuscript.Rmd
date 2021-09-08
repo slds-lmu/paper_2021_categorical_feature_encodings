@@ -234,8 +234,6 @@ In our study, the first level in alphabetical order is used as the reference cat
 We replace new levels in the prediction phase with the most frequent level in the training set.
 In datasets with a high total number of feature levels, constructing all indicator variables can be detrimental to the predictive performance or at least increase the computational load.
 As indicator encoding is practically infeasible for high cardinality variables (a feature with $10^5$ levels would add $10^5$ new columns), we limit the number of indicator coded features by collapsing rare levels beyond a varying threshold to a single *other* category before encoding.
-Closely related to dummy encoding in classical analysis of variance and regression are Helmert and Polynomial contrasts [@chambers_1992].
-However, these encodings focus on ordinal categorical features, which we did not consider in our study.
 
 ## Hash Encoding
 
@@ -1068,12 +1066,16 @@ When interpreting our results, we assume that the encoder rankings are comparabl
 This seems plausible, considering the high stability of our meta rankings between algorithms.
 We only use 5-fold-CV without repetitions to estimate predictive performance, but due to a small variance between folds, we could confidently detect performance differences of encoders for many datasets.
 As we are interested in model-agnostic methods that can be combined with any supervised ML algorithm, we do not investigate several strategies proposed in the recent literature [@guo_2016; @prokhorenkova_2018].
-Additionally, we only investigate univariate encodings, i.e. we always encode each variable separately.
+We do not differentiate between nominal and ordinal categorical features:
+Most publicly available datasets simply do not contain any high cardinal ordinal features.
+For many applications, ordinal feature information is not available as metadata which makes it less relevant for some applications like automatic ML.
+Thus, our benchmark does not include specific ordinal encoding methods like Helmert and Polynomial contrasts [@chambers_1992] which are closely related to dummy encoding or modern ordinal penalization methods [@tutz_2016].
+We only investigate univariate encodings, i.e. we always encode each variable separately.
 Levels with comparable main effects can therefore not be distinguished based on the transformed feature, which prevents the consecutive ML algorithm from learning interactions for specific levels.
-Methods that can jointly encode several variables and therefore leverage correlation structures between the different variables are an interesting avenue of research in the future:
+Methods that can jointly encode several variables and therefore leverage correlation structures between the different variables are an interesting avenue for future research:
 Recent approaches use target-based encoding strategies to learn a vector-valued representation of a level, similar to entity embeddings [@guo_2016].
 Those should be compared to classical approaches from the optimal scaling literature [e.g. @deleeuw_1976] leading to the *aspect* framework [@mair_2010], which is unfortunately unfamiliar to many ML researchers.
-We furthermore only investigate traditional categorical variables and do not extend our analysis to multi-categorical variables or text-strings [@cerda_2018; @cerda_2020], where other encoding techniques can harvest additional information.
+We only investigate traditional categorical variables and do not extend our analysis to multi-categorical variables or text-strings [@cerda_2018; @cerda_2020], where other encoding techniques can harvest additional information.
 
 
 ## Conclusion
