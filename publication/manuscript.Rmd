@@ -1039,53 +1039,53 @@ We tested this using HCT thresholds of $10$, $25$ and $125$, but the results are
 In general, the optimal threshold seemed to strongly depend on the dataset, but we also observed some weak patterns:
 LASSO improved for larger HCT, indicating that its internal regularization can efficiently deal with the sparseness induced by indicator encoding.
 In comparison, other methods generally yielded better performance if features above the very low HCT of $10$ were encoded using one of the target encoding strategies.
-Furthermore, different regularization for the target based encoders seemed not to prefer strongly different HCT values.
+Differences in regularization for the target based encoders seemed not to prefer different HCT values.
 
 
 Discussion
 ==========
 
-In our benchmark, we compared encoding strategies for high cardinality features on a variety of regression, binary and multiclass classification datasets with different ML algorithms.
-Regularized target encoding (glmm) was superior across most datasets and ML algorithms.
+In our benchmark, we compared encoding strategies for high cardinality categorical features on a variety of regression, binary, and multiclass classification datasets with different ML algorithms.
+Regularized target encoding was superior across most datasets and ML algorithms.
 Although the performance of other encoding strategies was comparable in some conditions, target encoding was never outperformed.
-In general, our results suggest that regularized target encoding works well for all kinds of algorithms and could be considered by default when working with high cardinality features.
-In terms of runtime, using target encoding together with 5-fold CV sometimes leads to slightly longer runtimes (in comparison to indicator encoding), but especially for larger datasets this is often offset by the more efficient representation yielded from target encoding.
+In general, our results suggest that regularized target encoding based on glmms with 5-fold CV (glmm-5CV) works well for all kinds of algorithms and should be a reasonable default strategy.
+It sometimes leads to slightly longer runtimes (in comparison to indicator encoding), but especially for larger datasets this is often offset by the more efficient representation produced by target encoding.
 
-What constitutes a "high" cardinality problem is a difficult question that might not only depend on the number of levels but also on other characteristics of the dataset and its features. Unfortunately, the number of datasets in our study was too small to discover consistent patterns between encoder performance and dataset characteristics.
-Target encoding features with as little as 10 levels seemed to be effective in a substantive number of conditions, but for other datasets, higher HCT values performed better.
+What constitutes a "high" cardinality problem is a difficult question that might not only depend on the number of levels but also on other characteristics of the dataset and its features.
+Supposedly, the number of datasets in our study was too small to discover consistent patterns between encoder performance and dataset characteristics.
+Target encoding features with only 10 levels seemed to be effective in a substantive number of conditions, but for other datasets, higher HCT values performed better.
 Thus, some form of hyperparameter tuning seems necessary to decide the level threshold for target encoding at this point, as no suitable defaults seem to be available.
 Note that we compared different HCT values but then used the same encoding strategy for all affected features alongside one-hot encoding for the remaining ones.
-Although this strategy is reasonable, it might be beneficial to decide whether to use target encoding on a feature by feature basis.
+A further improvement could be to decide whether to use target encoding on a feature by feature basis.
 ML pipelines could introduce a categorical hyperparameter for each feature that represents which encoding is used.
 To make this complicated meta optimization problem feasible, only a small number of encoders can be included.
 Our study can help to decide which encoders could be safely omitted from consideration.
 
 ## Limitations
 
-In our study, several decisions were necessary to make answering our research questions technically and computationally feasible.
-First, we only used minimal tuning for our ML algorithms, as we were not interested in comparing their performance against each other.
+Several design decisions were necessary to make answering our research questions computationally feasible:
+We used minimal tuning for our ML algorithms, as we were not interested in comparing their performance against each other.
 This probably led to suboptimal performance for the GB, KNN, and SVM learners.
 When interpreting our results, we assume that the encoder rankings are comparable when more extensive tuning is used.
-This seems plausible, considering the high stability of our meta rankings between algorithms.
-We only use 5-fold-CV without repetitions to estimate predictive performance, but due to a small variance between folds, we could confidently detect performance differences of encoders for many datasets.
-As we are interested in model-agnostic methods that can be combined with any supervised ML algorithm, we do not investigate several strategies proposed in the recent literature [@guo_2016; @prokhorenkova_2018].
+This is plausible because the meta rankings between algorithms were highly stable.
+We only used 5-fold-CV without repetitions to estimate predictive performance, but due to a small variance between folds, we could confidently detect performance differences of encoders for many datasets.
+Because we are interested in model-agnostic methods that can be combined with any supervised ML algorithm, we did not investigate recent model-specific strategies [@guo_2016; @prokhorenkova_2018].
 We do not differentiate between nominal and ordinal categorical features:
 Most publicly available datasets simply do not contain any high cardinal ordinal features.
 For many applications, ordinal feature information is not available as metadata which makes it less relevant for some applications like automatic ML.
-Thus, our benchmark does not include specific ordinal encoding methods like Helmert and Polynomial contrasts [@chambers_1992] which are closely related to dummy encoding or modern ordinal penalization methods [@tutz_2016].
-We only investigate univariate encodings, i.e. we always encode each variable separately.
-Levels with comparable main effects can therefore not be distinguished based on the transformed feature, which prevents the consecutive ML algorithm from learning interactions for specific levels.
-Methods that can jointly encode several variables and therefore leverage correlation structures between the different variables are an interesting avenue for future research:
-Recent approaches use target-based encoding strategies to learn a vector-valued representation of a level, similar to entity embeddings [@guo_2016].
-Those should be compared to classical approaches from the optimal scaling literature [e.g. @deleeuw_1976] leading to the *aspect* framework [@mair_2010], which is unfortunately unfamiliar to many ML researchers.
+Thus, our benchmark does not include specific ordinal encoding methods like Helmert and Polynomial contrasts [@chambers_1992] or ordinal penalization methods [@tutz_2016].
 We only investigate traditional categorical variables and do not extend our analysis to multi-categorical variables or text-strings [@cerda_2018; @cerda_2020], where other encoding techniques can harvest additional information.
-
+We only investigate univariate encodings, i.e. we always encode each variable separately.
+Levels with comparable main effects can not be distinguished based on the transformed feature, which prevents the consecutive ML algorithm from learning interactions for specific levels.
+Methods that jointly encode features and therefore leverage correlational structures between features are an interesting avenue for future research:
+Recent approaches use target-based encoding strategies to learn a vector-valued representation of a level, similar to entity embeddings [@guo_2016].
+Those should be compared to classical approaches from the optimal scaling literature [e.g. @deleeuw_1976] or the subsequent *aspect* framework [@mair_2010], which are unfortunately unfamiliar to many ML researchers.
 
 ## Conclusion
 
 This benchmark study compared the predictive performance of a variety of strategies to encode categorical features with a high number of unordered levels for different supervised ML algorithms.
 Regularized versions of target encoding, which uses predictions of the target variable as numeric feature values, performed better than traditional strategies like integer or indicator encoding.
-Most effective, with a consistent superior performance across Ml algorithms and datasets, was a target encoder which combines simple generalized linear mixed models with cross-validation and does not require tuning hyperparameters.
+Most effective, with a consistently superior performance across Ml algorithms and datasets, was a target encoder which combines simple generalized linear mixed models with cross-validation and does not require hyperparameter tuning.
 
 ## Declarations
 
