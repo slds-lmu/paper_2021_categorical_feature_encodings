@@ -96,16 +96,17 @@ We consider the classical setting of supervised learning from an $i.i.d.$ tabula
 Here, $\bm{x}$ consists of a mix of numeric (real-valued or integer-valued) features and categorical features, the latter of which we seek to transform feature-wise to numeric features using a categorical encoding technique.
 Let $x$ be a single unordered categorical feature from a feature space $\mathcal{X}$ with cardinality $card(\mathcal{X}) \leq card(\mathbb{N})$.
 It holds either $y \in \mathbb{R}$ (regression), $y \in \mathcal{C}$ from a finite class space $\mathcal{C} = \{c_1, ..., c_C\}$ with $C = 2$ (binary classification) or $C > 2$ (multiclass classification). We always assume to observe all $C$ classes in our training sample, however we might only observe a subset $\mathcal{L}^{train} \subseteq \mathcal{X}$ of a feature's available $L$ levels, $\mathcal{L}^{train} = \{l_1, ..., l_L\}$ for categorical features. We denote the observed frequency of class $c$ in the training set with $N_c$ and the observed frequency of a level $l$ in the training set with $N_l$.
-As most ML algorithms require numerical features, we use categorical encoding techniques to transform each nominal feature $x^{train}$ into numerical features  $\hat{x}^{train}$ which are then used for training. If clear from the context, we use $\hat{x}_l$ as the encoded value for an observation with level $l$. Although datasets might contain multiple high cardinality features, we encode each feature separately but with the same strategy.
+We investigate categorical encoding techniques to transform each nominal feature $x^{train}$ into numerical features  $\hat{x}^{train}$ which are then used for training. If clear from the context, we use $\hat{x}_l$ as the encoded value for an observation with level $l$. Although datasets might contain multiple high cardinality features, we encode each feature separately but with the same strategy.
 
 
 ## Related Work
 
 We broadly categorize feature encoding techniques into *target-agnostic* methods and *target-based* methods [@micci_barreca_2001].
-Figure \ref{fig:overview} contains a taxonomy of the encoding methods we consider in this work. *Target-agnostic* methods do not rely on any information about the target variable and can therefore also be used in unsupervised settings. Simple strategies from this domain e.g. one-hot or dummy encoding are widely used -- in the scientific literature [@kuhn_2019; @hancock] but also on  Kaggle\footnote{\url{https://www.kaggle.com}} -- to embed variables for classical ML algorithms as well as (deep) neural networks.
+Figure \ref{fig:overview} contains a taxonomy of our considered encoding methods. *Target-agnostic* methods do not rely on any information about the target variable and can therefore also be used in unsupervised settings.
+Simple strategies from this domain e.g. one-hot or dummy encoding are widely used -- in the scientific literature [@kuhn_2019; @hancock] but also on  Kaggle\footnote{\url{https://www.kaggle.com}} to embed variables for classical ML algorithms as well as (deep) neural networks.
 Such indicator methods map each level of a categorical variable to a set of dichotomous features encoding the presence or absence of a particular level.
 An obvious drawback of indicator encoding is that it adds one additional feature per level of a categorical variable.
-When the number of levels increases to a point where indicator encoding leads to an unreasonable number of features, levels are often simply mapped to integer values with random order (integer encoding). Alternatively, the "hashing trick" [@weinberger_2009] can be used to randomly collapse feature levels into a smaller number of indicator variables [@kuhn_2019], or levels can be encoded by using the observed frequency of a given level in the dataset (frequency encoding).
+When indicator encoding leads to an unreasonable number of features, levels are often mapped to integer values with random order (integer encoding). Alternatively, the "hashing trick" [@weinberger_2009] can be used to randomly collapse feature levels into a smaller number of indicator variables [@kuhn_2019], or levels can be encoded by using the observed frequency of a given level in the dataset (frequency encoding).
 
 \tikzset{
   basic/.style  = {draw, text width=4cm, drop shadow, font=\sffamily \scriptsize, rectangle},
@@ -149,8 +150,8 @@ When the number of levels increases to a point where indicator encoding leads to
 *Target-based* methods try to incorporate information about the target values associated with a given level.
 Early strategies aimed to reduce the number of levels by methods like hierarchical clustering or decision trees based on statistics of the target variable, although this has been rarely described in the scientific literature [for a brief mention, see @micci_barreca_2001].
 The basic idea of more advanced methods called target, impact, mean, or likelihood encoding is to use the training set to make a simple prediction of the target for each level of the categorical feature, and to use the prediction as the numerical feature value $\hat{x}_l$ for the respective level.
-One of the earliest formal descriptions of this strategy is @micci_barreca_2001.
-A very similar approach is called *weights of evidence* in the credit scoring literature @hand_1997.
+An early formal description of this strategy is @micci_barreca_2001.
+Similar approaches are called *weights of evidence* in the credit scoring literature @hand_1997.
 In simple target encoding for regression problems, the mean target value in the training set from all observations with a certain feature level is used as the numeric value to encode that level for all observations: $\hat{x}_l = \frac{\sum_{i:x^{train}_i = l}y^{train}_i}{N_l}$.
 Simple target encoding often does not perform well with rare levels, where it tends to overfit to the training data and fails to generalize well for new observations.
 In the extreme case of a categorical feature with unique values (e.g. some hashed ID variable) studied in @prokhorenkova_2018, the mean target for each level of this feature in simple target encoding is similar to the true target value of a single observation.
@@ -161,10 +162,11 @@ An alternative strategy is to combine target encoding with cross-validation (CV)
 
 ## Previous Encoding Benchmarks
 
-Several small-scale studies that investigate aspects of our research questions have been previously conducted.
-However, those works do not yield conclusive results due to narrower or different scopes or not considering high cardinality variables.
+Several small-scale studies have been previously conducted.
+Those works did not yield conclusive results due to narrower scopes or not considering high cardinality variables.
 One benchmark ($6$ datasets) on encoding high cardinality features (cardinality between $103$ and $9095$) in combination with gradient boosting has been published on the Kaggle forums [@prokopev_2018].
-Different versions of target encoding are compared with indicator, integer, and frequency encoding. They recommend combining the smoothed version of target encoding with 4- or 5-fold CV, never using simple target encoding and use indicator encoding only for small datasets.
+Different versions of target encoding are compared with indicator, integer, and frequency encoding.
+They recommend combining the smoothed version of target encoding with 4- or 5-fold CV, never using simple target encoding and using indicator encoding only for small datasets.
 Interestingly, frequency encoding did perform well in many cases.
 @coors_2018 performed a benchmark ($12$ datasets) on encoding high cardinality features (maximum number of levels per dataset between 10 and 25847) when developing the automatic gradient boosting (autoxgboost) library [@thomas_2018]. They compared different variants of target encoding with integer and indicator encoding. In their benchmarks, target encoding only improved over target-agnostic methods on $2$ datasets, while it led to worse results on 4 datasets. For a smaller number of levels, indicator and integer encoding yielded similar results.
 As those studies only consider gradient boosting and a limited amount of datasets, it is unclear whether results generalize to other datasets and ML algorithms.
