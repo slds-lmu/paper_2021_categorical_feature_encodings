@@ -521,7 +521,7 @@ Benchmark Results
 =================
 \label{sec:results}
 
-```{r}
+```{r, warning=FALSE}
 res = readRDS("../analysis/high_cardinality_benchmark/results.rds")
 
 # remove cluster and random forest encoders
