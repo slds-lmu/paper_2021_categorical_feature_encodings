@@ -932,17 +932,15 @@ ggdendrogram(meta_clust, rotate = TRUE) + theme(text = element_text(size=20))
 
 ## Summary of Encoder Performance
 
-Our results indicate that regularized target encoding was superior or at least competitive on all datasets.
-Especially effective was glmm encoding with 5-fold-CV, which ranked first place for all ML algorithms except SVM.
-While the impact encoding used no regularization, we compared different amounts of regularization for the glmm encoder.
-When performance differences between target encoders were observed, regularization seemed beneficial.
-In those datasets, impact encoding not only performed worse than glmm with CV but was sometimes also inferior compared to other encoders.
+Regularized target encoding was superior or at least competitive on all datasets.
 We could not observe a setting in which regularized target encoding was convincingly beaten by target agnostic methods.
-When looking for a simple default method, indicator encoding in combination with collapsing small levels seems a robust alternative, although the glmm strategies should be preferred.
+Especially effective was glmm encoding with 5-fold-CV, which ranked first place for all ML algorithms except SVM.
+Performance often did not improve with glmm-10CV, suggesting that 5 folds might be a good regularization default in practice.
+In line with earlier research [@micci_barreca_2001; @prokhorenkova_2018], target encoding with regularization (glmm) performed better or equally well in comparison with the unregularized impact encoder.
+When glmm performed better, impact encoding not only performed worse than glmm with CV but was sometimes also inferior compared to other encoders.
 
-Furthermore, we observed several interesting patterns:
-Integer encoding did not perform well with GB in our benchmark in contrast to what is stated in the documentation of some boosting libraries\footnote{\url{https://lightgbm.readthedocs.io/en/latest/Advanced-Topics.html\#categorical-feature-support}}.
-In contrast, target-based encoders (especially the glmm encoder) seem to be a compelling strategy.
+The following observations were also interesting:
+Surprisingly, integer encoding did not perform well with GB and target-based encoders (especially the glmm encoder) seem to be preferable.
 For LASSO, previous studies have suggested that indicator encoding works well, even with a very high number of levels [@cerda_2018].
 Although the glmm encoders ranked first in our benchmark for the LASSO, it was the only algorithm where the indicator encoders achieved the next best ranking.
 Note that for computational reasons we limited the maximum amount of indicator variables per feature to 125 in our experimental design.
@@ -954,14 +952,7 @@ For some datasets (*medical_charges*, *road-safety-drivers-sex*, and *Midwest_su
 Although consistent with the big picture, SVM results have to be considered with care, as some experimental conditions resulted in unexpected computational errors.
 In RF, a widely used strategy to deal with categorical features is to order levels by average target statistics for a given level.
 For a small number of levels, this approach has been reported superior to indicator and integer encoding [@wright_2019], while we observed poor performance for datasets with a larger number of levels.
-
-<!-- heavily shorten this section or combine with others? -->
-In line with earlier research [@micci_barreca_2001; @prokhorenkova_2018], target encoding with regularization (glmm) performed better or equally well in comparison with the unregularized impact encoder.
-The glmm method was the overall winner based on the encoder rankings across datasets and outperformed impact encoding on some datasets.
-Our results show that combining target encoding based on glmms with 5-fold CV led to an improved predictive performance on many datasets.
-Performance often did not improve further when using 10 folds, suggesting that 5 folds might be a good default in practice.
-The glmm encoder has a clear advantage over target encoding with a smoothing hyperparameter [@micci_barreca_2001], as costly tuning the whole ML pipeline with different smoothing values is not required.
-
+When looking for a simple default encoding, indicator encoding in combination with collapsing small levels seems a robust alternative, although the glmm encoders performed better.
 We found that one-hot encoding usually gave a slightly better performance than dummy encoding, which has also been observed by @chiquet_2016 and commented on in
 @tutz_2016 (p.254).
 Our results suggest that one-hot encoding is the better standard compared to dummy encoding when applying nonlinear regularized models like RF, GB or SVM with (high cardinal) categorical features.
@@ -1050,6 +1041,7 @@ Regularized target encoding was superior across most datasets and ML algorithms.
 Although the performance of other encoding strategies was comparable in some conditions, target encoding was never outperformed.
 In general, our results suggest that regularized target encoding based on glmms with 5-fold CV (glmm-5CV) works well for all kinds of algorithms and should be a reasonable default strategy.
 It sometimes leads to slightly longer runtimes (in comparison to indicator encoding), but especially for larger datasets this is often offset by the more efficient representation produced by target encoding.
+The glmm encoder has a clear advantage over target encoding with a smoothing hyperparameter [@micci_barreca_2001], as costly tuning the whole ML pipeline with different smoothing values is not required.
 
 What constitutes a "high" cardinality problem is a difficult question that might not only depend on the number of levels but also on other characteristics of the dataset and its features.
 Supposedly, the number of datasets in our study was too small to discover consistent patterns between encoder performance and dataset characteristics.
