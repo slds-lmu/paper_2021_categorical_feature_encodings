@@ -14,7 +14,7 @@ authors:
     address: Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany
 
 abstract: |
-  Because most machine learning (ML) algorithms are designed for numerical inputs, efficiently encoding categorical variables is a crucial aspect during data analysis. An often encountered problem are high cardinality features, i.e. unordered categorical predictor variables with a high number of levels. We study techniques that yield numeric representations of categorical variables which can then be used in subsequent ML applications. We focus on the impact of those techniques on a subsequent algorithm's predictive performance, and -- if possible -- derive best practices on when to use which technique. We conducted a large-scale benchmark experiment, where we compared different encoding strategies together with five ML algorithms (lasso, random forest, gradient boosting, k-nearest neighbors, support vector machine) using datasets from regression, binary- and multiclass- classification settings. Throughout our study, regularized versions of target encoding (i.e. using target predictions based on the feature levels in the training set as a new numerical feature) consistently provided the best results. Traditional encodings that make unreasonable assumptions to map levels to integers (e.g. integer encoding) or to reduce the number of levels (possibly based on target information, e.g. leaf encoding) before creating binary indicator variables (one-hot or dummy encoding) were not as effective.
+  Since most machine learning (ML) algorithms are designed for numerical inputs, efficiently encoding categorical variables is a crucial aspect in data analysis. A common problem are high cardinality features, i.e. unordered categorical predictor variables with a high number of levels. We study techniques that yield numeric representations of categorical variables which can then be used in subsequent ML applications. We focus on the impact of these techniques on a subsequent algorithm's predictive performance, and -- if possible -- derive best practices on when to use which technique. We conducted a large-scale benchmark experiment, where we compared different encoding strategies together with five ML algorithms (lasso, random forest, gradient boosting, k-nearest neighbors, support vector machine) using datasets from regression, binary- and multiclass- classification settings. In our study, regularized versions of target encoding (i.e. using target predictions based on the feature levels in the training set as a new numerical feature) consistently provided the best results. Traditionally widely used encodings that make unreasonable assumptions to map levels to integers (e.g. integer encoding) or to reduce the number of levels (possibly based on target information, e.g. leaf encoding) before creating binary indicator variables (one-hot or dummy encoding) were not as effective in comparison.
 keywords:
 - supervised machine learning
 - benchmark
@@ -44,6 +44,7 @@ header-includes:
    - \usepackage{amsfonts}
    - \usepackage{mathtools}
    - \usepackage{bm}
+   - \usepackage{float}
    - \usepackage{tikz}
    - \usepackage{threeparttable}
    - \usetikzlibrary{trees,arrows, chains, fit, positioning, calc, shapes, shadows}
@@ -52,17 +53,6 @@ header-includes:
    - \usepackage[T1]{fontenc}
    - \usepackage{orcidlink}
 ---
-
-<!--
-Possible titles:
-- Target encoding outperforms traditional methods in supervised machine learning with high cardinality features
-- Experimental evaluation of categorical encoding techniques
-- Encoding Categorical Variables -- An empirical study
-- A Benchmark Experiment on How to Encode High Cardinality Features in Supervised Machine Learning
-- Encoding Categorical Variables -- An empirical study
-- Your algorithm can not handle categorical variables? 10 solutions you would have never thought of.
-- You will not believe how these categorical variable encoding techniques perform in practice!
--->
 
 ```{r setup, include=FALSE}
 options(scipen=3)
@@ -87,7 +77,7 @@ Introduction
 ============
 
 
-While increasing sample size is usually considered the most important step to improve the predictive performance of a machine learning (ML) model, using effective feature engineering comes as a close second. One remaining challenge is how to handle high cardinality features -- categorical predictor variables with a high number of different levels but without any natural ordering. While categorical variables with only a small number of possible levels can often be efficiently dealt with using standard techniques such as one-hot encoding, this approach becomes inefficient as the number of levels increases. Although domain knowledge can sometimes be used to reduce the number of theoretically relevant levels, finding strategies that work well on a large variety of problems is highly important for many applications as well as in automated ML [@thomas_2018; @thornton_2013; @feurer_2015]. Optimally, strategies should be model-agnostic because benchmarking encoding methods together with ML algorithms from different classes is often necessary for applications. While a variety of strategies exist, there are very few benchmarks that can be used to decide which technique is expected to yield good predictive performance. Furthermore, there has recently been increasing attention on scientific benchmark studies that compare different methods to provide a clearer picture in light of a large number of methods available to practitioners [@delgado; @bommert], as they can provide at least partial answers to such questions. The goal of this study is to provide an overview of existing approaches for encoding categorical predictor variables and to study their effect on a model's predictive performance.
+While increasing sample size is usually considered the most important step to improve the predictive performance of a machine learning (ML) model, using effective feature engineering comes as a close second. One remaining challenge is how to handle high cardinality features -- categorical predictor variables with a high number of different levels but without any natural ordering. While categorical variables with only a small number of possible levels can often be efficiently dealt with using standard techniques such as one-hot encoding, this approach becomes inefficient as the number of levels increases. Although domain knowledge can sometimes be used to reduce the number of theoretically relevant levels, finding strategies that work well on a large variety of problems is highly important for many applications as well as in automated ML [@thomas_2018; @thornton_2013; @feurer_2015]. Optimally, strategies should be model-agnostic because benchmarking encoding methods together with ML algorithms from different classes is often necessary for applications. While a variety of strategies exist, there are very few benchmarks that can be used to decide which technique is expected to yield good predictive performance. Furthermore, there has recently been increasing attention on scientific benchmark studies that compare different methods to provide a clearer picture in light of a large number of methods available to practitioners [@delgado; @bommert], as they can provide at least partial answers to such questions. The goal of this study is to provide an overview of existing approaches for encoding categorical predictor variables and to study their effect on a model's predictive performance. In order to achieve this, we carefully design a benchmark setting allowing us to discern the effect of encoding strategies (and their hyperparamters) along with their interaction with subsequently applied ML methods from an unbiased perspective. Since we do not introduce a new competitor method, we do not risk cherry picking \cite{dehghani2021benchmark} or reporting over-optimistic results \cite{niesl2021overoptimism}.
 
 
 ## Notation
@@ -151,7 +141,7 @@ When indicator encoding leads to an unreasonable number of features, levels are 
 Early strategies aimed to reduce the number of levels by methods like hierarchical clustering or decision trees based on statistics of the target variable, although this has been rarely described in the scientific literature [for a brief mention, see @micci_barreca_2001].
 The basic idea of more advanced methods called target, impact, mean, or likelihood encoding is to use the training set to make a simple prediction of the target for each level of the categorical feature, and to use the prediction as the numerical feature value $\hat{x}_l$ for the respective level.
 An early formal description of this strategy is @micci_barreca_2001.
-In simple target encoding for regression problems, the mean target value in the training set from all observations with a certain feature level is used as the numeric value to encode that level for all observations: $\hat{x}_l = \frac{\sum_{i:x^{train}_i = l}y^{train}_i}{N_l}$.
+In simple target encoding for regression problems, the mean target value in the training set from all observations with a certain feature level is used to encode that level for all observations: $\hat{x}_l = \frac{\sum_{i:x^{train}_i = l}y^{train}_i}{N_l}$.
 Simple target encoding often does not perform well with rare levels, where it tends to overfit to the training data and fails to generalize well for new observations.
 In the extreme case of a categorical feature with unique values (e.g. some hashed ID variable) studied in @prokhorenkova_2018, the mean target for each level of this feature in simple target encoding is similar to the true target value of a single observation.
 Based on the encoded feature, all observations can be predicted perfectly in the training set, even if the original variable did not contain any useful information.
@@ -159,7 +149,7 @@ ML models would place a high priority on such an encoded feature during training
 To avoid this, practitioners often use regularized target encoding with a smoothing parameter that shrinks those effects towards the global mean [@micci_barreca_2001].
 An alternative strategy is to combine target encoding with cross-validation (CV) techniques [@prokhorenkova_2018].
 
-## Previous Encoding Benchmarks
+## Categorical Encoding Benchmarks
 
 Several small-scale studies have been previously conducted.
 Those works did not yield conclusive results due to narrower scopes or not considering high cardinality variables.
@@ -183,23 +173,17 @@ We study this problem on a larger variety of datasets and settings.
 The main goal of our study is to assess the impact different categorical encoding techniques have on subsequent models' predictive performance.
 As the optimal encoding might differ depending on the ML algorithm, we consider various state-of-the-art algorithms, *regularized linear models* (LASSO), *random forests* (RF), *gradient tree boosting* (GB), *k-nearest neighbors* (KNN), and *support vector machines* (SVM).
 To find default settings for high cardinality features, we analyze a variety of datasets with different characteristics including regression, binary classification, and multiclass classification problems.
-Because our methods vary in runtime and complexity, we are interested whether more complex methods are to be preferred, or if simpler approaches suffice.
+Because our methods vary in runtime and complexity, we are interested in whether more complex methods are to be preferred, or if simpler approaches suffice.
 We also study the relationship between a feature's cardinality and the choice of encoding technique by varying the minimum number of levels above which features are transformed.
 
 ## Contributions
 
 We survey a broad set of categorical encoding techniques and conduct a comprehensive benchmark study with a focus on high cardinality features.
-We study $7$ different encoding techniques in conjunction with $5$ commonly used ML algorithms across $24$ datasets, both from a classification and a regression regime. 
+We carefully design a benchmark scenario as well as a preprocessing scheme allowing us to study $7$ different encoding techniques in conjunction with $5$ commonly used ML algorithms across $24$ diverse datasets, both from a classification and a regression regime.
 We give a detailed description of our study design to highlight important considerations for studying high cardinality features.
 Our results provide an overview of the performance of various approaches heavily used in the literature.
 After a discussion of results concerning predictive performance, we provide further analyses seeking to inform practitioners which methods to apply.
 This includes an important discussion of runtimes.
-
-<!--
-how many different encoders do we count?
-7? 10? 11?
--->
-
 
 Encodings
 =========
@@ -212,7 +196,7 @@ An important detail is how encoding techniques treat new levels during the predi
 ## Integer Encoding
 
 The simplest strategy for categorical features is integer encoding (also called ordinal encoding).
-We randomly map the observed levels from the training set to the integers $1$ to $L$.
+Observed levels from the training set are mapped to the integers $1$ to $L$.
 Although new levels could be mapped to $L+1$ or $0$, model predictions would be arbitrary as the integer order does not carry information.
 Thus, we encode new levels as missing values and use mode imputation to obtain the integer which matches the most frequent level in the training set.
 Integer encoding should only be an acceptable strategy for tree-based models, which can separate all original levels with repeated splits.
@@ -235,8 +219,7 @@ A reference feature level is chosen that is encoded with $0$ in all indicator co
 For one-hot encoding, the zero vector can be used to encode new levels which were not observed during training.
 For dummy encoding, it is not useful to collapse new levels to the often arbitrary reference category; in our case the first level in alphabetical order.
 We replace new levels in the prediction phase with the most frequent level in the training set.
-In datasets with a high total number of feature levels, constructing all indicator variables can be detrimental to the predictive performance or at least increase the computational load.
-As indicator encoding is practically infeasible for high cardinality variables (a feature with $10^5$ levels would add $10^5$ new columns), we limit the number of indicator coded features by collapsing rare levels beyond a varying threshold to a single *other* category before encoding.
+As constructing all indicator variables is practically infeasible for high cardinality variables, we limit their number by collapsing rare levels beyond a varying threshold to a single *other* category before encoding.
 
 ## Hash Encoding
 
@@ -288,7 +271,7 @@ The basic idea is to encode each feature level with the conditional target mean 
 The impact encoder for classification uses a logit link and transforms the original feature into $C$ numeric features, each representing one target class.
 A smoothing parameter $\epsilon$ is introduced to avoid division by zero.
 This parameter could be used to further regularize towards the unconditional mean.
-We always choose a small $\epsilon = 0.0001$ as we want to compare simple target encoding with the regularized encoder introduced next.
+We choose a small $\epsilon = 0.0001$ as we want to compare simple target encoding with the regularized encoder introduced next.
 Weights of evidence encoding from the credit scoring classification literature [@hand_1997] is almost identical to impact encoding, but without regularization or centering.
 
 ## GLMM Encoding
@@ -297,13 +280,12 @@ Smoothed target encoding [@micci_barreca_2001] can be interpreted as a simple (g
 This connection is described in @kuhn_2019.
 To achieve regularized impact encoding, we implemented glmm encoders for regression, binary, and multiclass classification which are described in Algorithm \ref{alg:glmm-regr} (regression) and in the Supplementary Material (classification).
 The encoded value for each level is based on the spherical conditional mode estimates.
-In regression, the conditional modes are similar to the mean target value for each level, weighted by the relative observed frequency of that level in the training set [@gelman_2006].
-For technical details, see @bates_2018.
-Additionally, the estimate of the fixed intercept can be used during the prediction phase to encode new feature levels that were not observed in the training set.
+In regression, the conditional modes are similar to the mean target value for each level, weighted by the relative observed frequency of that level in the training set [@gelman_2006, @bates_2018].
+The estimate of the fixed intercept can be used during the prediction phase to encode new feature levels not observed in the training set.
 In multiclass classification, we fit $C$ one vs. rest glmms resulting in one encoded feature per class.
 An important advantage of using a glmm over impact encoding with a smoothing parameter is that a reasonable amount of regularization is determined automatically and tuning the complete ML pipeline is not necessary.
 
-A further strategy to avoid overfitting in target encoding is to combine it with CV to train the encoder on independent observations without limiting the data to train the ML model.
+Overfitting can be further avoided through combination with cross-validation (CV) to train the encoder on independent observations without limiting the data to train the ML model.
 We provide an implementation which combines target encoding based on glmms with CV.
 During the training phase, we partition the data using CV into $n.folds$ and fit a glmm on each resulting training set.
 For each observation, there is exactly one glmm that did not use that observation for model fitting and can be safely used for encoding.
@@ -425,7 +407,7 @@ descr_dat2[Name == "KDDCup09_upselling", HighCardLevels := "14,...,5073,5713,139
 #descr_dat2$logNHCL = ""
 ```
 
-Table \ref{tab:datasets} summarizes our benchmark datasets.
+Table \ref{tab:datasets} summarizes datasets used in our benchmark.
 We specifically investigate datasets that contain categorical variables with a large number of levels, including many well-known datasets
 from previous studies [@cerda_2018; @prokhorenkova_2018; @coors_2018; @kuhn_2019].
 All datasets can be downloaded from the `OpenML` platform [@vanschoren_2013] based on the name or the displayed OmlId.
@@ -434,52 +416,28 @@ To assess the imbalance in categorical variables we computed the normalized entr
 The maximum normalized entropy is $1$, which corresponds to a uniform distribution, while a lower number indicates a larger imbalance.
 Sample sizes range between `r descr_dat[, min(Obs)]` and `r descr_dat[, max(Obs)]` observations.
 The total number of features ranges between `r descr_dat[, min(NumFeats + BinFeats + CatFeats)]` and `r descr_dat[, max(NumFeats + BinFeats + CatFeats)]`.
-Datasets contain between `r descr_dat[, min(sapply(strsplit(HighCardLevels, " "), length))]` and `r descr_dat[, max(sapply(strsplit(HighCardLevels, " "), length))]` categorical features with more than $10$ levels, with the maximum number of levels for one feature in a dataset ranging between `r descr_dat[, min(MaxCatLvls)]` and `r descr_dat[, max(MaxCatLvls)]`.
-Missing values are present in about half of the datasets.
+Datasets contain between `r descr_dat[, min(sapply(strsplit(HighCardLevels, " "), length))]` and `r descr_dat[, max(sapply(strsplit(HighCardLevels, " "), length))]` categorical features with more than $10$ levels, with the maximum number of levels for a feature ranging between `r descr_dat[, min(MaxCatLvls)]` and `r descr_dat[, max(MaxCatLvls)]`. Missing values are present in about half of the datasets.
 
-```{r datasets, warning=FALSE, results="asis"}
-library(kableExtra)
-landscape(
-  knitr::kable(
-    descr_dat2[, .(OmlId, Name, Cl = Classes, N = Obs, `NA%` = NAs*100/(Obs*(NumFeats + BinFeats + CatFeats)),
-                Num = as.integer(NumFeats), Bin = as.integer(BinFeats), Cat = as.integer(CatFeats), HighCardLevels, Entropy = "")],
-    digits=2L,
-    caption="Benchmark Datasets and Dataset Characteristics",
-    label="datasets"
-  ) %>%
-  column_spec(10, image = spec_boxplot(lapply(descr_dat2$entropies, unlist))) %>%
-  footnote(general = "OmlId = Id on OpenML, Name = name on OpenML, Cl = classes (0: regression), N = observations, NA% = percentage of missing values, Num = numeric features, Bin = binary features, Cat = categorical features, HighCardLevels = number of levels for each categorical feature with at least 10 levels (some levels are not displayed for KDDCup09_upselling), Entropy = box-plot of normalized Shannon-entropy across levels (smaller = larger imbalance).", threeparttable = TRUE) %>%
-  kable_styling(latex_options="scale_down")
-)
-```
 
 ## High Cardinality Threshold
 \label{sec:HCT}
 
-<!--
-A relevant question we aim to answer is what the minimum number of levels is, for which more involved encoding methods should be used. WE CANNOT REALLY ANSWER THIS WITH ONLY 3 DIFFERENT HCT VALUES...
--->
 It is often assumed that advanced encoding methods are only advantageous for variables with a high number of levels, while simple indicator encoding is more appropriate for a small number of levels.
-To make our benchmark results more realistic, a high cardinality threshold (HCT) parameter with values of $10$, $25$, and $125$ was introduced which determined varying configurations for the different encoders.
+To reflect this in our benchmark, a high cardinality threshold (HCT) parameter with values of $10$, $25$, and $125$ was introduced determining varying configurations for the different encoders.
 For indicator encoding, the $HCT - 1$ most frequent levels are encoded together with a single collapsed category for the remaining levels.
-For integer, frequency, hash, leaf, impact, and glmm encoders, only features with more than HCT levels in the training set were encoded with the respective strategy, while the remaining categorical features were one-hot encoded.
-HCT is used as the hash size in hash encoding.
+For integer, frequency, hash, leaf, impact, and glmm encoders, only features with more than HCT levels in the training set were encoded with the respective strategy, while the remaining categorical features were one-hot encoded. HCT is used as the hash size in hash encoding.
 In the remove control condition, features with more than HCT levels in the training set are removed from the feature set.\footnote{Based on the number of categorical features and levels per feature, some HCT settings were removed from the benchmark for some combinations of dataset $\times$ encoder.
-This made sure that encoders always affect at least one feature and that the remove condition always removes at least one feature.
-If several HCT settings of an encoder would lead to identical encoding strategies for all features of a dataset, we only kept the condition with the smallest HCT value.}
-
+This ensured that encoders always affect at least one feature and the remove condition always removes at least one feature.
+If settings where aan encoder would lead to identical encoding strategies for all features of a dataset, we only kept the condition with the smallest HCT value.}
 
 ## Machine Learning Pipeline and Algorithms
 \label{sec:pipeline}
 
-In total, we investigate $5$ ML algorithms.
-We kept tuning their hyperparameters to a minimum because we were interested in the effect of the encoding techniques instead of a comparison of ML algorithms.
+In total, we investigate $5$ ML algorithms. We kept tuning their hyperparameters to a minimum because we were interested in the effect of the encoding techniques instead of a comparison of ML algorithms.
 LASSOs were fitted with `glmnet` [@friedman_2010], internally tuning the regularization using 5-fold CV.
 RFs with $500$ trees were trained using `ranger` [@wright_2017] without tuning, because RFs can be expected to give reasonable results with default settings [@probst_2019].
-GB models were trained using `xgboost` [@chen_2018].
-We set the learning rate to $0.01$ and determined the number of iterations using early stopping on a 20% holdout set.
-KNN was taken from package `kknn` [@schliep_2016].
-We standardized all features and used a constant $k=15$ for the number of nearest neighbors, together with an information gain filter [@brown2012] to limit the number of features to $25$.
+GB models were trained using `xgboost` [@chen_2018], setting the learning rate to $0.01$ and determining the number of iterations using early stopping on a 20% holdout set.
+KNN was taken from package `kknn` [@schliep_2016] standardizing features and using a constant $k=15$ for the number of nearest neighbors, together with an information gain filter [@brown2012] to limit the number of features to $25$.
 SVMs with radial basis function kernel were trained with `liquidSVM` [@steinwart_2017].
 The bandwidth and regularization parameters were internally tuned using 5-fold CV. We used a one-vs-all approach for multiclass-settings.
 
@@ -495,6 +453,22 @@ It was carefully designed to ensure consistent results for extreme conditions (e
 - **Final one-hot encoding**: Transform all remaining categorical features via one-hot encoding (skipped for no encoding condition).
 - **Learner**: Use the transformed data from each training set to fit the respective ML algorithm.
   In the prediction phase, transformed feature values (based on the trained encoder) for new observations in each test set are fed into the trained model to compute predictions.
+
+```{r datasets, warning=FALSE, results="asis", fig.pos="h"}
+library(kableExtra)
+landscape(
+  knitr::kable(
+    descr_dat2[, .(OmlId, Name, Cl = Classes, N = Obs, `NA%` = NAs*100/(Obs*(NumFeats + BinFeats + CatFeats)),
+                Num = as.integer(NumFeats), Bin = as.integer(BinFeats), Cat = as.integer(CatFeats), HighCardLevels, Entropy = "")],
+    digits=2L,
+    caption="Benchmark Datasets and Dataset Characteristics",
+    label="datasets"
+  ) %>%
+  column_spec(10, image = spec_boxplot(lapply(descr_dat2$entropies, unlist))) %>%
+  footnote(general = "OmlId = Id on OpenML, Name = name on OpenML, Cl = classes (0: regression), N = observations, NA% = percentage of missing values, Num = numeric features, Bin = binary features, Cat = categorical features, HighCardLevels = number of levels for each categorical feature with at least 10 levels (some levels are not displayed for KDDCup09_upselling), Entropy = box-plot of normalized Shannon-entropy across levels (smaller = larger imbalance).", threeparttable = TRUE) %>%
+  kable_styling(latex_options="scale_down")
+)
+```
 
 ## Performance Evaluation
 
@@ -615,7 +589,7 @@ We report results for regression and classification datasets separately, as the 
 For `r length(svm_errors[, unique(Name)])` datasets, some conditions with the SVM led to unexpected crashes due to memory problems or numerical errors.
 We completely removed those datasets for the SVM when computing ranks or other statistics that compare encodings across datasets.
 
-## Encoder Performance on Each Dataset
+## Encoder Performance
 
 (ref:regr-res) Performance estimates from 5-CV for regression (mean, min, max). For each combination, only the best HCT condition is displayed. Note the reversed y-axis to ease visual interpretation.
 
@@ -953,8 +927,7 @@ Although consistent with the big picture, SVM results have to be considered with
 In RF, a widely used strategy to deal with categorical features is to order levels by average target statistics for a given level.
 For a small number of levels, this approach has been reported superior to indicator and integer encoding [@wright_2019], while we observed poor performance for datasets with a larger number of levels.
 When looking for a simple default encoding, indicator encoding in combination with collapsing small levels seems a robust alternative, although the glmm encoders performed better.
-We found that one-hot encoding usually gave a slightly better performance than dummy encoding, which has also been observed by @chiquet_2016 and commented on in
-@tutz_2016 (p.254).
+We found that one-hot encoding usually gave a slightly better performance than dummy encoding, which has also been observed by @chiquet_2016 and @tutz_2016 (p.254).
 Our results suggest that one-hot encoding is the better standard compared to dummy encoding when applying nonlinear regularized models like RF, GB or SVM with (high cardinal) categorical features.
 We provide a more detailed comparison for indicator encoding in the Supplementary Material.
 
@@ -1085,7 +1058,7 @@ Most effective, with a consistently superior performance across Ml algorithms an
 This work has been funded by the German Federal Ministry of Education and Research (BMBF) under Grant No. 01IS18036A and by the Bavarian Ministry of Economic Affairs, Regional Development and Energy through the Center for Analytics – Data – Applications (ADA-Center) within the framework of „BAYERN DIGITAL II“ (20-3410-2-9-8).
 
 ### Conflicts of Interest
-None.
+The authors declare no conflict of interest.
 
 ### Code Availability
 All analysis code is publicly available at \url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}.
