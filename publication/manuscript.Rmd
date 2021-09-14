@@ -9,7 +9,7 @@ authors:
   - name: Florian Pfisterer \orcidlink{0000-0001-8867-762X}
     address: Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany
   - name: Janek Thomas \orcidlink{0000-0003-4511-6245}
-    address: Fraunhofer Institute for Integrated Circuits, Hansastraße 32, 8068 Munich, Germany
+    address: Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany
   - name: Bernd Bischl \orcidlink{0000-0001-6002-6980}
     address: Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany
 
@@ -77,7 +77,7 @@ Introduction
 ============
 
 
-While increasing sample size is usually considered the most important step to improve the predictive performance of a machine learning (ML) model, using effective feature engineering comes as a close second. One remaining challenge is how to handle high cardinality features -- categorical predictor variables with a high number of different levels but without any natural ordering. While categorical variables with only a small number of possible levels can often be efficiently dealt with using standard techniques such as one-hot encoding, this approach becomes inefficient as the number of levels increases. Although domain knowledge can sometimes be used to reduce the number of theoretically relevant levels, finding strategies that work well on a large variety of problems is highly important for many applications as well as in automated ML [@thomas_2018; @thornton_2013; @feurer_2015]. Optimally, strategies should be model-agnostic because benchmarking encoding methods together with ML algorithms from different classes is often necessary for applications. While a variety of strategies exist, there are very few benchmarks that can be used to decide which technique is expected to yield good predictive performance. Furthermore, there has recently been increasing attention on scientific benchmark studies that compare different methods to provide a clearer picture in light of a large number of methods available to practitioners [@delgado; @bommert], as they can provide at least partial answers to such questions. The goal of this study is to provide an overview of existing approaches for encoding categorical predictor variables and to study their effect on a model's predictive performance. In order to achieve this, we carefully design a benchmark setting allowing us to discern the effect of encoding strategies (and their hyperparamters) along with their interaction with subsequently applied ML methods from an unbiased perspective. Since we do not introduce a new competitor method, we do not risk cherry picking \cite{dehghani2021benchmark} or reporting over-optimistic results \cite{niesl2021overoptimism}.
+While increasing sample size is usually considered the most important step to improve the predictive performance of a machine learning (ML) model, using effective feature engineering comes as a close second. One remaining challenge is how to handle high cardinality features -- categorical predictor variables with a high number of different levels but without any natural ordering. While categorical variables with only a small number of possible levels can often be efficiently dealt with using standard techniques such as one-hot encoding, this approach becomes inefficient as the number of levels increases. Despite this inefficiency, simpler strategies are often favored in practice because other methods are either not known, implementations are missing or because of a lack of trust due to missing validation studies. Although domain knowledge can sometimes be used to reduce the number of theoretically relevant levels, finding strategies that work well on a large variety of problems is highly important for many applications as well as in automated ML [@thomas_2018; @thornton_2013; @feurer_2015]. Optimally, strategies should be model-agnostic because benchmarking encoding methods together with ML algorithms from different classes is often necessary for applications. While a variety of strategies exist, there are very few benchmarks that can be used to decide which technique is expected to yield good predictive performance. Furthermore, there has recently been increasing attention on scientific benchmark studies that compare different methods to provide a clearer picture in light of a large number of methods available to practitioners [@delgado; @bommert], as they can provide at least partial answers to such questions. The goal of this study is to provide an overview of existing approaches for encoding categorical predictor variables and to study their effect on a model's predictive performance. In order to achieve this, we carefully design a benchmark setting allowing us to discern the effect of encoding strategies (and their hyperparamters) along with their interaction with subsequently applied ML methods from an unbiased perspective. Since we do not introduce a new competitor method, we do not risk cherry picking \cite{dehghani2021benchmark} or reporting over-optimistic results \cite{niesl2021overoptimism}.
 
 
 ## Notation
@@ -444,14 +444,20 @@ The bandwidth and regularization parameters were internally tuned using 5-fold C
 The ML pipeline outlined below was used for all experimental conditions.
 It was carefully designed to ensure consistent results for extreme conditions (e.g. some levels only existing in the training data).
 
-- **Imputation I**: Create a new factor level for missing values in categorical features with more than two categories. Impute missing values in binary features using the mode and missing values in numerical features using the mean feature value in the training data.
-- **Encoding**: Transform the complete categorical features by the respective encoder.
+**Imputation I**: Create a new factor level for missing values in categorical features with more than two categories. Impute missing values in binary features using the mode and missing values in numerical features using the mean feature value in the training data.
+
+**Encoding**: Transform the complete categorical features by the respective encoder.
   In the \textit{no encoding} condition, the encoder simply passes on its input.
   The leaf and remove conditions still return categorical features, while the remaining encoders return only numerical features. Encoders only affect categorical variables above the specified HCT value.
-- **Imputation II**: To handle new levels observed during prediction, impute missing values obtained during encoding.
-- **Drop constants**: Drop features that are constant during training. As none of the original datasets includes constant columns, this step only removes constant features that are produced by the encoders or the CV splitting procedure.
-- **Final one-hot encoding**: Transform all remaining categorical features via one-hot encoding (skipped for no encoding condition).
-- **Learner**: Use the transformed data from each training set to fit the respective ML algorithm.
+
+**Imputation II**: To handle new levels observed during prediction, impute missing values obtained during encoding.
+
+**Drop constants**: Drop features that are constant during training. As none of the original datasets includes constant columns, this step only removes constant features that are produced by the encoders or the CV splitting procedure.
+
+**Final one-hot encoding**: Transform all remaining
+categorical features via one-hot encoding (skipped for no encoding condition).
+
+**Learner**: Use the transformed data from each training set to fit the respective ML algorithm.
   In the prediction phase, transformed feature values (based on the trained encoder) for new observations in each test set are fed into the trained model to compute predictions.
 
 ```{r datasets, warning=FALSE, results="asis", fig.pos="h"}
