@@ -491,13 +491,7 @@ The pre-processing, as well as the final ML algorithm described in \ref{sec:pipe
 All materials for this study, including reproducible code for this manuscript and result objects can be downloaded from our **online repository** \footnote{\url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}}.
 
 Throughout our experiments, we use 5-fold CV to obtain estimates of predictive performance.
-Depending on the target variable, we report root mean squared error (RMSE) for regression, area under the curve (AUC) for binary classification, and its extension AUNU [@ferri_2009] for multiclass problems:
-\begin{align*}
-RMSE = \sqrt{\frac{1}{N}\sum_{i=1}^N(y_i-\hat{y_i})^2},\
-AUC = \frac{U}{N_{pos} \cdot N_{neg}},\
-AUNU = \frac{\sum_{c = 1}^C AUC_c}{C}
-\end{align*}
-$N$: number of observations, $N_{pos}$ and $N_{neg}$: number of true labels in both classes, $U$: test statistic of the Mann-Whitney-U test, and $AUC_c$: one vs. rest $AUC$ of class $c$.
+Depending on the target variable, we report root mean squared error (RMSE) for regression, area under the curve (AUC) for binary classification, and its extension AUNU [@ferri_2009] for multiclass problems.
 
 In our benchmark study, each encoding method listed in Section \ref{sec:methods} is combined with all ML algorithms (c.f. Section \ref{sec:pipeline}) across
 high cardinality thresholds (HCT) $10$, $25$, $125$.
