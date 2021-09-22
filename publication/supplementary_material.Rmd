@@ -294,6 +294,91 @@ Algorithm $1$ to $10$ contain the pseudocode for all encoding strategies studied
 
 *Note on GLMM Encoders:* To speed up the computation of the GLMM encoders, we followed the performance tips from the lme4 vignette (<https://cran.r-project.org/web/packages/lme4/vignettes/lmerperf.html>): we did not compute derivations (`calc.derivs = FALSE`) and used the `NLOPT_LN_BOBYQA` optimizer from the nloptr package with liberal stopping criteria (`maxeval = 1000`, `xtol_abs = 1e-6`, `ftol_abs = 1e-6`).
 
+# Benchmark Datasets
+
+```{r, echo=FALSE, results='hide', message=FALSE}
+library(data.table)
+library(stringi)
+library(kableExtra)
+descr_dat = as.data.table(readRDS("../analysis/high_cardinality_benchmark/descr_dat.rds"))
+# remove unfinished datasets
+descr_dat = descr_dat[!(Name %in% c("KDD98", "Traffic_violations", "sf-police-incidents")),]
+```
+
+```{r, eval=FALSE, echo=FALSE}
+# Collect info (do not run, just here for reproducibility)
+if (FALSE) {
+  # Collect cardinality information
+  library(OpenML)
+  setOMLConfig(arff.reader = "farff")
+  out = list()
+  for (id in descr_dat$OmlId) {
+    d = getOMLDataSet(id)
+    fcts = (sapply(d$data, class) == "factor") & (names(d$data) != d$desc$default.target.attribute)
+    out[[as.character(id)]] = lapply(d$data[fcts], table)
+    saveRDS(out, "../analysis/high_cardinality_benchmark/dataset_factor_levels.rds")
+    gc()
+  }
+
+  # Restart
+  setOMLConfig(arff.reader = "RWeka") # farff seems to break for one dataset
+  out = readRDS("../analysis/high_cardinality_benchmark/dataset_factor_levels.rds")
+  for (id in sample(setdiff(descr_dat$OmlId, as.numeric(names(out))))) {
+    d = getOMLDataSet(id)
+    fcts = (sapply(d$data, class) == "factor") & (names(d$data) != d$desc$default.target.attribute)
+    out[[as.character(id)]] = lapply(d$data[fcts], table)
+    saveRDS(out, "../analysis/high_cardinality_benchmark/dataset_factor_levels.rds")
+    gc()
+  }
+}
+```
+
+```{r, echo=FALSE}
+# Normalized Shannon entropy
+shannonEntropy <- function(counts.table, log.base = getOption("GeneFamilies.entropy.log.base",
+    base::exp(1))) {
+    if (length(counts.table) <= 1)
+        return(0)
+    c.t.s <- sum(counts.table)
+    -sum(sapply(counts.table, function(x) x/c.t.s * log(x/c.t.s, base = log.base)))/log(length(counts.table),
+        base = log.base)
+}
+out = readRDS("../analysis/high_cardinality_benchmark/dataset_factor_levels.rds")
+ents = lapply(out, function(x) lapply(x, shannonEntropy))
+ent2 = lapply(out, function(x) lapply(x, function(x) min(x)/max(x)))
+ents = data.table(OmlId = as.numeric(names(ents)), entropies = ents)
+descr_dat = merge(descr_dat, ents)
+```
+
+```{r, echo=FALSE}
+descr_dat2 = descr_dat
+descr_dat2[Classes == 0, task_type := rep("regr", .N)]
+descr_dat2[Classes == 2, task_type := rep("bin_class", .N)]
+descr_dat2[Classes > 2, task_type  := rep("multi_class", .N)]
+descr_dat2[, task_type := factor(task_type, levels = c("regr", "bin_class", "multi_class"))]
+setorder(descr_dat2, task_type, Obs)
+descr_dat2$HighCardLevels = stri_replace_all_fixed(descr_dat2$HighCardLevels, " ", "")
+descr_dat2[Name == "KDDCup09_upselling", HighCardLevels := "14,...,5073,5713,13990,15415,15415"]
+#hcl_list = lapply(descr_dat$HighCardLevels, function(x) {log(as.numeric(unlist(strsplit(x, #split = ","))))})
+#descr_dat2$logNHCL = ""
+```
+
+```{r datasets, echo=FALSE, warning=FALSE, results="asis", fig.pos="h"}
+library(kableExtra)
+landscape(
+  knitr::kable(
+    descr_dat2[, .(OmlId, Name, Cl = Classes, N = Obs, `NA%` = NAs*100/(Obs*(NumFeats + BinFeats + CatFeats)),
+                Num = as.integer(NumFeats), Bin = as.integer(BinFeats), Cat = as.integer(CatFeats), HighCardLevels, Entropy = "")],
+    digits=2L,
+    caption="Benchmark Datasets and Dataset Characteristics",
+    label="datasets"
+  ) %>%
+  column_spec(10, image = spec_boxplot(lapply(descr_dat2$entropies, unlist))) %>%
+  footnote(general = "OmlId = Id on OpenML, Name = name on OpenML, Cl = classes (0: regression), N = observations, NA% = percentage of missing values, Num = numeric features, Bin = binary features, Cat = categorical features, HighCardLevels = number of levels for each categorical feature with at least 10 levels (some levels are not displayed for KDDCup09_upselling), Entropy = box-plot of normalized Shannon-entropy across levels (smaller = larger imbalance).", threeparttable = TRUE) %>%
+  kable_styling(latex_options="scale_down")
+)
+```
+
 \newpage
 \clearpage
 
@@ -345,7 +430,7 @@ apa_table(oneh_win, digits = 0,
   note = "Percentage of encoding conditions in which one-hot performs better than dummy per task setting.")
 ```
 
-From the results shown in Table 2 we can observe, that for most algorithms and datasets, one-hot encoding is to be preferred over dummy-encoding.
+From the results shown in Table \ref{tab:oneh-win} we can observe, that for most algorithms and datasets, one-hot encoding is to be preferred over dummy-encoding.
 
 # Additional encoders not mentioned in the manuscript
 

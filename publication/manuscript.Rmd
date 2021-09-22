@@ -197,7 +197,7 @@ Encodings
 \label{sec:methods}
 
 
-Pseudocode is presented in the main text (for non-standard encodings), or the Supplementary Material (for standard methods).
+Pseudocode for all encoders is presented in the Supplementary Material.
 An important detail is how encoding techniques treat new levels during the prediction phase.
 
 ## Integer Encoding
@@ -250,27 +250,6 @@ New levels are encoded with the arbitrary number of the terminal node with most 
 Encoded values are treated as a new categorical feature and encoded by one-hot encoding.
 Our leaf encoder can be thought of as a simplification of the approach suggested by @grabczewski_2003.
 
-
-\begin{algorithm}
-  \caption{Leaf Encoding}
-  \label{alg:leaf}
-  \begin{algorithmic}
-    \State \underline{Training:} require number of cross-validation folds $K \in \mathbb{N}$
-    \State fit CART tree on $\mathcal{D}^{train}$ with complexity pruning based on $K$-fold cross-validation
-      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
-        $\tilde{x}_i = t$ with $x^{train}_i$ in terminal node $t$
-      \EndFor
-    \State \underline{Prediction:}
-    \For{$x^{new}$}
-        \If{$x^{new} \in \mathcal{L}^{train}$}\ {$\tilde{x}^{new} = t$ with $x^{new}$ in terminal node $t$}
-        \Else\ {$\tilde{x}^{new} = b$ where $b$ indicates the biggest terminal node}
-        \EndIf
-    \EndFor
-  \end{algorithmic}
-\end{algorithm}
-
-
-
 ## Impact Encoding
 
 An early formal description of a so-called impact, target or James-Stein encoder was provided by @micci_barreca_2001.
@@ -285,7 +264,7 @@ Weights of evidence encoding from the credit scoring classification literature [
 
 Smoothed target encoding [@micci_barreca_2001] can be interpreted as a simple (generalized) linear mixed model (glmm) in which the target is predicted by a random intercept for each feature level in addition to a fixed global intercept.
 This connection is described in @kuhn_2019.
-To achieve regularized impact encoding, we implemented glmm encoders for regression, binary, and multiclass classification which are described in Algorithm \ref{alg:glmm-regr} (regression) and in the Supplementary Material (classification).
+To achieve regularized impact encoding, we implemented glmm encoders for regression, binary, and multiclass classification.
 The encoded value for each level is based on the spherical conditional mode estimates.
 In regression, the conditional modes are similar to the mean target value for each level, weighted by the relative observed frequency of that level in the training set [@gelman_2006, @bates_2018].
 The estimate of the fixed intercept can be used during the prediction phase to encode new feature levels not observed in the training set.
@@ -300,34 +279,6 @@ Note that the $n.folds$ CV models (for $n.folds$ > 1) are only used during the t
 In the prediction phase, feature values are always encoded by a single glmm fitted to the complete training set.
 We study this method in three different settings: without CV (noCV), with $5-$ (5CV) and with $10-$ fold CV (10CV).
 In our study, we use the lmer (regression) and glmer (classification) functions from the lme4 package in R [@bates_2015] as an efficient way to fit glmms.
-\begin{algorithm}
-  \caption{GLMM Encoding Regression}
-  \label{alg:glmm-regr}
-  \begin{algorithmic}
-    \State \underline{Training:} require $n.folds \in \mathbb{N}$
-     \State fit simple random intercept model: $y^{train}_i = \beta_{0l} + \epsilon_{i} = \gamma_{oo} + u_l + \epsilon_{i}$ on $\mathcal{D}^{train}$
-     \State with $u_l \overset{iid}{\sim} N(0,\tau^2)$, $\epsilon_i \overset{iid}{\sim} N(0,\sigma^2)$ and $x^{train}_i = l$, $l \in \mathcal{L}^{train}$
-    \If{$n.folds = 1$}
-      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
-        \State $\hat{x}^{train}_i = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{train}_i = l$
-      \EndFor
-    \Else\ {use $n.folds$ cross-validation scheme to make training sets $\mathcal{D}^{train}_1, \dots, \mathcal{D}^{train}_{n.folds}$}
-      \State and fit simple random intercept model on each $\mathcal{D}^{train}_{m}$
-      \ForAll{$x^{train}_i \in \boldsymbol{x}^{train}$}
-        \State $\hat{x}^{train}_i = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{train}_i = l$ based on the model m
-        \State with $(x^{train}_i, y^{train}_i) \notin \mathcal{D}^{train}_m$
-      \EndFor
-    \EndIf
-    \State \underline{Prediction:}
-    \For{$x^{new}$}
-      \If{$x^{new} \in \mathcal{L}^{train}$}
-        \State $\hat{x}^{new} = \hat{\beta}_{0l}^{\mathcal{D}^{train}}$ with $x^{new} = l$ based on full model fitted on $\mathcal{D}^{train}$
-      \Else\ {$\hat{x}^{new} = \hat{\gamma}_{00}$ based on full model fitted on $\mathcal{D}^{train}$}
-      \EndIf
-    \EndFor
-  \end{algorithmic}
-\end{algorithm}
-
 
 ## Control Conditions
 
@@ -414,7 +365,7 @@ descr_dat2[Name == "KDDCup09_upselling", HighCardLevels := "14,...,5073,5713,139
 #descr_dat2$logNHCL = ""
 ```
 
-Table \ref{tab:datasets} summarizes datasets used in our benchmark.
+A table showing a detailed summary of all benchmark datasets can be found in the Supplementary Material.
 We specifically investigate datasets that contain categorical variables with a large number of levels, including many well-known datasets
 from previous studies [@cerda_2018; @prokhorenkova_2018; @coors_2018; @kuhn_2019].
 All datasets can be downloaded from the `OpenML` platform [@vanschoren_2013] based on the name or the displayed OmlId.
@@ -467,7 +418,7 @@ categorical features via one-hot encoding (skipped for no encoding condition).
 **Learner**: Use the transformed data from each training set to fit the respective ML algorithm.
   In the prediction phase, transformed feature values (based on the trained encoder) for new observations in each test set are fed into the trained model to compute predictions.
 
-```{r datasets, warning=FALSE, results="asis", fig.pos="h"}
+```{r datasets, warning=FALSE, results="hide", fig.pos="h"}
 library(kableExtra)
 landscape(
   knitr::kable(
@@ -821,7 +772,7 @@ $$ \underset{R \in \mathcal{C}}{arg\ min} \ \sum_{b=1}^B d(R_b, R)$$
 where $d$ is the symmetric difference distance and $R_b$ is the relation for dataset $b$ [@hornik_2007; @meyer_2018].
 The symmetric difference between two relations is the number of cases one encoding beats another encoding in one relation but not in the other one.
 
-(ref:rank-res) Consensus rankings across all datasets for each algorithm. Lower ranks indicate better performance. The rank of the *none* control condition of the RF (rank 11) was omitted from the figure.
+(ref:rank-res) Consensus rankings across all datasets for each algorithm. Lower ranks indicate better performance. The rank of the *none* control condition of the RF (rank 11 of 12) was omitted from the figure.
 
 ```{r, rank-res, out.height=".55\\textwidth", fig.cap='(ref:rank-res)', out.width="\\textwidth", message = FALSE}
 plotdt = rbindlist(lapply(names(cons_list), function(x) {
