@@ -1001,8 +1001,8 @@ We only investigate traditional categorical variables and do not extend our anal
 We only investigate univariate encodings, i.e. we always encode each variable separately.
 Levels with comparable main effects can not be distinguished based on the transformed feature, which prevents the consecutive ML algorithm from learning interactions for specific levels.
 Methods that jointly encode features and therefore leverage correlational structures between features are an interesting avenue for future research:
-Recent approaches use target-based encoding strategies to learn a vector-valued representation of a level, similar to entity embeddings [@guo_2016].
-Those should be compared to classical approaches from the optimal scaling literature [e.g. @deleeuw_1976] or the subsequent *aspect* framework [@mair_2010], which are unfortunately unfamiliar to many ML researchers.
+Recent approaches use target-based encoding strategies to learn a vector-valued representation of a level, similar to neural network embeddings [@guo_2016;@rodriguez_2018].
+Those should be compared to classical approaches from the optimal scaling literature [e.g. @deleeuw_1976;@young_1976] or the subsequent *aspect* framework [@mair_2010], which are unfortunately unfamiliar to many ML researchers.
 
 ## Conclusion
 
