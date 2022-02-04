@@ -84,7 +84,7 @@ Although domain knowledge can sometimes be used to reduce the number of theoreti
 While a variety of strategies exist, there are very few benchmarks that can be used to decide which technique is expected to yield good predictive performance.
 Furthermore, there has recently been increasing attention on scientific benchmark studies that compare different methods to provide a clearer picture in light of a large number of methods available to practitioners [@delgado; @bommert], as they can provide at least partial answers to such questions.
 The goal of this study is to provide an overview of existing approaches for encoding categorical predictor variables and to study their effect on a model's predictive performance.
-Following calls for neutral benchmark studies [@boulesteix_2017], which do not introduce a new method, thus reducing the risk of cherry picking methods [@dehghani2021benchmark] and reporting over-optimistic performance [@niesl2021overoptimism], we present a carefully designed experimental setting to discern the effect of encoding strategies and their interaction with different ML algorithms.
+Following calls in the computational statistics community for neutral benchmark studies [@boulesteix_2017], which do not introduce a new method, thus reducing the risk of cherry picking methods [@dehghani2021benchmark] and reporting over-optimistic performance [@niesl2021overoptimism], we present a carefully designed experimental setting to discern the effect of encoding strategies and their interaction with different ML algorithms.
 
 ## Notation
 
@@ -171,7 +171,7 @@ Another line of work studies variable encodings employed within specific ML mode
 @wright_2019 study treatments for categorical variables in random forests together with dummy and integer encoding (18 datasets, cardinality between $3$ and $38$), concluding that indicator and integer encoding perform subpar in comparison to methods that re-order levels according to the target variable.
 @prokhorenkova_2018 compared their new CatBoost variant of target encoding to smoothed target encoding without CV, hold-out, and leave-one-out CV on $8$ datasets.
 While the CatBoost method performed best, hold-out came second and target encoding without CV performed worst.
-An overview of encoding techniques tailored towards neural networks (e.g. the widely adopted *entity embeddings* by @guo_2016) is provided in @hancock.
+An overview of encoding techniques tailored towards neural networks [e.g. the widely adopted *entity embeddings* by @guo_2016] is provided in @hancock.
 They present a survey of indicator- and embedding-based methods but no benchmark study.
 In contrast, our work is the first to focus on high cardinality variables and techniques that are agnostic to the subsequent ML method.
 We study this problem on a larger variety of datasets and settings.
@@ -762,8 +762,9 @@ meta_d = relation_dissimilarity(meta_ens)
 meta_clust = hclust(meta_d)
 ```
 
-To further summarize, present meta rankings for each ML algorithm in Figure \ref{fig:rank-res}.
-First, we defined an encoder relation within each dataset, based on corrected resample t-tests [@nadeau_2003].
+To further analyze our results, we used statistical inference methods inspired by the benchmark community in computational statistics [e.g., @hothorn_2005]. 
+First, we present meta rankings for each ML algorithm in Figure \ref{fig:rank-res}:
+We defined an encoder relation within each dataset, based on corrected resample t-tests [@nadeau_2003].
 An encoding was defined to beat another encoding if the one-sided p-value of the t-test was $< .05$.
 This allowed us to compute a weak-order consensus ranking $R$ defined by the optimization problem:
 
@@ -845,7 +846,7 @@ Looking at meta-rankings, approaches based on GLMM's in combination with cross-v
 A further interesting detail omitted in Figure \ref{fig:rank-res} for clarity is that the \textit{none} encoding strategy for the RF was beaten by all strategies except for the \textit{remove} condition.
 This implies, that even if the algorithm provides a mechanic for treating categorical variables, it might often be optimal to use a different strategy instead.
 
-In an exploratory analysis, we tried to find clusters of datasets based on systematic patterns of encoder performance (independent of the employed ML algorithm).
+In a second exploratory analysis, we tried to find clusters of datasets based on systematic patterns of encoder performance (independent of the employed ML algorithm).
 We computed a partial-order consensus relation across ML algorithms for each dataset and hierarchically clustered the dataset consensus relations using the symmetric difference distance in combination with the complete linkage agglomeration method.
 The resulting dendrogram is displayed in Figure \@ref(fig:dendrogram).
 Although the cluster structure is somewhat ambiguous, roughly three clusters can be described:
@@ -993,6 +994,7 @@ When interpreting our results, we assume that the encoder rankings are comparabl
 This is plausible because the meta rankings between algorithms were highly stable.
 We only used 5-fold-CV without repetitions to estimate predictive performance, but due to a small variance between folds, we could confidently detect performance differences of encoders for many datasets.
 Because we are interested in model-agnostic methods that can be combined with any supervised ML algorithm, we did not investigate recent model-specific strategies [@guo_2016; @prokhorenkova_2018].
+We did not include deep neural networks in our benchmark because they are still rarely applied in the statistical learning community and more dominant in computer science. 
 We do not differentiate between nominal and ordinal categorical features:
 Most publicly available datasets simply do not contain any high cardinal ordinal features.
 For many applications, ordinal feature information is not available as metadata which makes it less relevant for some applications like automatic ML.
@@ -1009,6 +1011,8 @@ Those should be compared to classical approaches from the optimal scaling litera
 This benchmark study compared the predictive performance of a variety of strategies to encode categorical features with a high number of unordered levels for different supervised ML algorithms.
 Regularized versions of target encoding, which uses predictions of the target variable as numeric feature values, performed better than traditional strategies like integer or indicator encoding.
 Most effective, with a consistently superior performance across Ml algorithms and datasets, was a target encoder which combines simple generalized linear mixed models with cross-validation and does not require hyperparameter tuning.
+GLMMs are a major workhorse in applied statistics but not well understood and often neglected by the ML community.
+Refining target encoders that use statistical models for more efficient regularization and studying their theoretical properties could be a valuable research topic for the computational statistics community.
 
 ## Declarations
 
