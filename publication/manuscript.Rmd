@@ -439,7 +439,7 @@ landscape(
 We perform all analyses in the open-source statistical software R [@r_2021].
 To enable a fair and reliable comparison in our study, we implemented all encoding methods on top of the `mlrCPO` package [@binder_2018].
 The pre-processing, as well as the final ML algorithm described in \ref{sec:pipeline}, were trained and resampled using the `mlr` framework [@bischl_2016] together with the `batchtools` package [@lang_2017] to scale the benchmark analysis to HPC compute infrastructure.
-All materials for this study, including reproducible code for this manuscript and result objects can be downloaded from our **online repository** \footnote{\url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}}.
+All materials for this study, including reproducible code for this manuscript and result objects can be downloaded from our **online repository** \footnote{\url{https://github.com/slds-lmu/paper_2021_categorical_feature_encodings}}.
 
 Throughout our experiments, we use 5-fold CV to obtain estimates of predictive performance.
 Depending on the target variable, we report root mean squared error (RMSE) for regression, area under the curve (AUC) for binary classification, and its extension AUNU [@ferri_2009] for multiclass problems.
@@ -1010,7 +1010,7 @@ Those should be compared to classical approaches from the optimal scaling litera
 
 This benchmark study compared the predictive performance of a variety of strategies to encode categorical features with a high number of unordered levels for different supervised ML algorithms.
 Regularized versions of target encoding, which uses predictions of the target variable as numeric feature values, performed better than traditional strategies like integer or indicator encoding.
-Most effective, with a consistently superior performance across Ml algorithms and datasets, was a target encoder which combines simple generalized linear mixed models with cross-validation and does not require hyperparameter tuning.
+Most effective, with a consistently superior performance across ML algorithms and datasets, was a target encoder which combines simple generalized linear mixed models with cross-validation and does not require hyperparameter tuning.
 GLMMs are a major workhorse in applied statistics but not well understood and often neglected by the ML community.
 Refining target encoders that use statistical models for more efficient regularization and studying their theoretical properties could be a valuable research topic for the computational statistics community.
 
@@ -1023,7 +1023,7 @@ This work has been funded by the German Federal Ministry of Education and Resear
 The authors declare no conflict of interest.
 
 ### Code Availability
-All analysis code is publicly available at \url{https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings}.
+All analysis code is publicly available at \url{https://github.com/slds-lmu/paper_2021_categorical_feature_encodings}.
 
 ### Availability of Data
 All benchmark datasets are publicly available at \url{https://www.openml.org/}.
