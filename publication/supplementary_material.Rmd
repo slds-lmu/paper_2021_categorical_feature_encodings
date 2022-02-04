@@ -520,7 +520,7 @@ In addition to the encoders mentioned in the manuscript, the benchmark results a
 
 ## Additional datasets not mentioned in the manuscript
 
-In addition to the datasets mentioned in the manuscript, the benchmark results available in our online repository (<https://github.com/compstat-lmu/paper_2021_categorical_feature_encodings>) contain three additional datasets: *KDD98* (OmlId: 41435), *sf-police-incidents* (OmlId: 41436), *Traffic_violations* (OmlId: 41443).
+In addition to the datasets mentioned in the manuscript, the benchmark results available in our online repository (<https://github.com/slds-lmu/paper_2021_categorical_feature_encodings>) contain three additional datasets: *KDD98* (OmlId: 41435), *sf-police-incidents* (OmlId: 41436), *Traffic_violations* (OmlId: 41443).
 A substantive amount of conditions failed for those rather big datasets due to memory problems, which is why we remove them from the results discussed in our manuscript. We briefly mention them here to provide full transparency.
 
 References {#references .unnumbered}
