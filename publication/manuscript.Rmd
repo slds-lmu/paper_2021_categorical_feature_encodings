@@ -32,6 +32,7 @@ output:
   #rticles::elsevier_article: default
   bookdown::pdf_book:
     base_format: rticles::springer_article
+  keep_md: true
 #bibstyle: spphys
 csl: elsevier-harvard.csl
 
@@ -62,9 +63,10 @@ options(scipen=3)
 # Seed for random number generation (use old rng to be identical with master thesis)
 RNGkind(sample.kind = "Rounding")
 set.seed(42)
-knitr::opts_chunk$set(cache.extra = knitr::rand_seed, echo = FALSE)
+knitr::opts_chunk$set(cache.extra = knitr::rand_seed, echo = FALSE, fig.path = "", dev=c('pdf', 'tiff'))
 options(knitr.kable.NA = " ")
 # options(papaja.na_string = "")
+options(tinytex.clean = FALSE)
 ```
 
 ```{r colour defaults, include=FALSE}

@@ -9,6 +9,5 @@
 *.Rproj
 
 *.log
-*.tex
 
 analysis/high_cardinality_benchmark/registry/
