@@ -34,7 +34,7 @@ output:
     base_format: rticles::springer_article
   keep_md: true
 #bibstyle: spphys
-csl: elsevier-harvard.csl
+#csl: svjour3.cls
 
 header-includes:
    - \usepackage{algorithm}
@@ -268,7 +268,7 @@ Smoothed target encoding [@micci_barreca_2001] can be interpreted as a simple (g
 This connection is described in @kuhn_2019.
 To achieve regularized impact encoding, we implemented glmm encoders for regression, binary, and multiclass classification.
 The encoded value for each level is based on the spherical conditional mode estimates.
-In regression, the conditional modes are similar to the mean target value for each level, weighted by the relative observed frequency of that level in the training set [@gelman_2006, @bates_2018].
+In regression, the conditional modes are similar to the mean target value for each level, weighted by the relative observed frequency of that level in the training set [@gelman_2006; @bates_2018].
 The estimate of the fixed intercept can be used during the prediction phase to encode new feature levels not observed in the training set.
 In multiclass classification, we fit $C$ one vs. rest glmms resulting in one encoded feature per class.
 An important advantage of using a glmm over impact encoding with a smoothing parameter is that a reasonable amount of regularization is determined automatically and tuning the complete ML pipeline is not necessary.
@@ -387,8 +387,8 @@ To reflect this in our benchmark, a high cardinality threshold (HCT) parameter w
 For indicator encoding, the $HCT - 1$ most frequent levels are encoded together with a single collapsed category for the remaining levels.
 For integer, frequency, hash, leaf, impact, and glmm encoders, only features with more than HCT levels in the training set were encoded with the respective strategy, while the remaining categorical features were one-hot encoded. HCT is used as the hash size in hash encoding.
 In the remove control condition, features with more than HCT levels in the training set are removed from the feature set.\footnote{Based on the number of categorical features and levels per feature, some HCT settings were removed from the benchmark for some combinations of dataset $\times$ encoder.
-This ensured that encoders always affect at least one feature and the remove condition always removes at least one feature.
-If settings where aan encoder would lead to identical encoding strategies for all features of a dataset, we only kept the condition with the smallest HCT value.}
+This ensured that encoders always affect at least one feature and that the remove condition always removes at least one feature.
+If settings where an encoder would lead to identical encoding strategies for all features of a dataset, we only kept the condition with the smallest HCT value.}
 
 ## Machine Learning Pipeline and Algorithms
 \label{sec:pipeline}
@@ -630,8 +630,7 @@ Mean performance estimates along with minimum and maximum performance are report
 To reduce the complexity induced by the hyperparameter HCT we only display the parameter condition with the best performance for each combination of dataset $\times$ encoding $\times$ ML algorithm.
 The y-axis differs for all datasets and is reversed for the RMSE for better visual comparison.
 For some datasets, the remove condition performed very similar to the other encodings (e.g. *ames-housing*, *porto-seguro*), suggesting that categorical features were not informative.
-Performance in some CV folds was below the FL learner for *flight-delay-usa-dec-2017* ($RMSE_{FL} =$ `r res[lrn.id == "FL" & Name == "flight-delay-usa-dec-2017", rmse.test.mean]`) and *nyc-taxi-green-dec-2016* ($RMSE_{FL} =$ `r res[lrn.id == "FL" & Name == "nyc-taxi-green-dec-2016", rmse.test.mean]`).
-<!-- den satz können wir nicht rauslassen, sonst gibt es zum FL keine Information im ganzen Paper -->
+Performance in some CV folds was below the FL learner for *flight-delay-usa-dec-2017* ($RMSE_{FL} =$ `r round(res[lrn.id == "FL" & Name == "flight-delay-usa-dec-2017", rmse.test.mean], 2)`) and *nyc-taxi-green-dec-2016* ($RMSE_{FL} =$ `r round(res[lrn.id == "FL" & Name == "nyc-taxi-green-dec-2016", rmse.test.mean], 2)`).
 
 On datasets with substantive performance differences, target encoding with the glmm encoder was generally **most** effective.
 The **worst** encoder differed by ML algorithm and dataset.
@@ -887,6 +886,7 @@ For some datasets (*medical_charges*, *road-safety-drivers-sex*, and *Midwest_su
 Although consistent with the big picture, SVM results have to be considered with care, as some experimental conditions resulted in unexpected computational errors.
 In RF, a widely used strategy to deal with categorical features is to order levels by average target statistics for a given level.
 For a small number of levels, this approach has been reported superior to indicator and integer encoding [@wright_2019], while we observed poor performance for datasets with a larger number of levels.
+
 When looking for a simple default encoding, indicator encoding in combination with collapsing small levels seems a robust alternative, although the glmm encoders performed better.
 We found that one-hot encoding usually gave a slightly better performance than dummy encoding, which has also been observed by @chiquet_2016 and @tutz_2016 (p.254).
 Our results suggest that one-hot encoding is the better standard compared to dummy encoding when applying nonlinear regularized models like RF, GB or SVM with (high cardinal) categorical features.
