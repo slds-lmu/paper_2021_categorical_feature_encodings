@@ -306,7 +306,7 @@ Springer class SVJour!}
 }\noindent\keywordname\enspace\ignorespaces#1\par}}
 %
 \def\subclassname{{\bfseries Mathematics Subject Classification
-(2000)}\enspace}
+(2020)}\enspace}
 \def\subclass#1{\par\addvspace\medskipamount{\rightskip=0pt plus1cm
 \def\and{\ifhmode\unskip\nobreak\fi\ $\cdot$
 }\noindent\subclassname\ignorespaces#1\par}}

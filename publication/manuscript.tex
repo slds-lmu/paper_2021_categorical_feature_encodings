@@ -118,29 +118,28 @@
 
 \institute{
         Florian Pargent \orcidlink{0000-0002-2388-553X} \at
-     Department of Psychology, Psychological Methods and Assessment, LMU Munich, Leopoldstra{\ss}e 13, 80802 Munich, Germany \\
+     Department of Psychology, Psychological Methods and Assessment, LMU Munich, Leopoldstraße 13, 80802 Munich, Germany \\
      \email{\href{mailto:florian.pargent@psy.lmu.de}{\nolinkurl{florian.pargent@psy.lmu.de}}}  %  \\
 %             \emph{Present address:} of F. Author  %  if needed
     \and
         Florian Pfisterer \orcidlink{0000-0001-8867-762X} \at
-     Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstra{\ss}e 33, 80539 Munich, Germany \\
+     Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany \\
      %  \\
 %             \emph{Present address:} of F. Author  %  if needed
     \and
         Janek Thomas \orcidlink{0000-0003-4511-6245} \at
-     Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstra{\ss}e 33, 80539 Munich, Germany \\
+     Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany \\
      %  \\
 %             \emph{Present address:} of F. Author  %  if needed
     \and
         Bernd Bischl \orcidlink{0000-0001-6002-6980} \at
-     Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstra{\ss}e 33, 80539 Munich, Germany \\
+     Department of Statistics, Statistical Learning and Data Science, LMU Munich, Ludwigstraße 33, 80539 Munich, Germany \\
      %  \\
 %             \emph{Present address:} of F. Author  %  if needed
     \and
     }
 
-\date{Received: date / Accepted: date}
-% The correct dates will be entered by the editor
+\date{\textbf{This preprint has since been published in Computational Statistics:} \newline Pargent, F., Pfisterer, F., Thomas, J., \& Bischl, B. Regularized target encoding outperforms traditional methods in supervised machine learning with high cardinality features. \textit{Computational Statistics} (2022). https://doi.org/10.1007/s00180-022-01207-6 \newline \textbf{Link to copy of record:} https://link.springer.com/article/10.1007/s00180-022-01207-6}
 
 
 \maketitle
@@ -171,11 +170,11 @@ Since most machine learning (ML) algorithms are designed for numerical inputs, e
 While increasing sample size is usually considered the most important step to improve the predictive performance of a machine learning (ML) model, using effective feature engineering comes as a close second. One remaining challenge is how to handle high cardinality features -- categorical predictor variables with a high number of different levels but without any natural ordering.
 While categorical variables with only a small number of possible levels can often be efficiently dealt with using standard techniques such as one-hot encoding, this approach becomes inefficient as the number of levels increases.
 Despite this inefficiency, simpler strategies are often favored in practice because other methods are either not known, implementations are missing or because of a lack of trust due to missing validation studies.
-Although domain knowledge can sometimes be used to reduce the number of theoretically relevant levels, finding strategies that work well on a large variety of problems is highly important for many applications as well as in automated ML (Feurer et al., 2015; Thomas et al., 2018; Thornton et al., 2013). Optimally, strategies should be model-agnostic because benchmarking encoding methods together with ML algorithms from different classes is often necessary for applications.
+Although domain knowledge can sometimes be used to reduce the number of theoretically relevant levels, finding strategies that work well on a large variety of problems is highly important for many applications as well as in automated ML (Thomas, Coors, and Bischl 2018; Thornton et al. 2013; Feurer et al. 2015). Optimally, strategies should be model-agnostic because benchmarking encoding methods together with ML algorithms from different classes is often necessary for applications.
 While a variety of strategies exist, there are very few benchmarks that can be used to decide which technique is expected to yield good predictive performance.
-Furthermore, there has recently been increasing attention on scientific benchmark studies that compare different methods to provide a clearer picture in light of a large number of methods available to practitioners (Bommert et al., 2020; Fernández-Delgado et al., 2014), as they can provide at least partial answers to such questions.
+Furthermore, there has recently been increasing attention on scientific benchmark studies that compare different methods to provide a clearer picture in light of a large number of methods available to practitioners (Fernández-Delgado et al. 2014; Bommert et al. 2020), as they can provide at least partial answers to such questions.
 The goal of this study is to provide an overview of existing approaches for encoding categorical predictor variables and to study their effect on a model's predictive performance.
-Following calls in the computational statistics community for neutral benchmark studies (Boulesteix et al., 2017), which do not introduce a new method, thus reducing the risk of cherry picking methods (Dehghani et al., 2021) and reporting over-optimistic performance (Nie{\ss}l et al., 2021), we present a carefully designed experimental setting to discern the effect of encoding strategies and their interaction with different ML algorithms.
+Following calls in the computational statistics community for neutral benchmark studies (Boulesteix et al. 2017), which do not introduce a new method, thus reducing the risk of cherry picking methods (Dehghani et al. 2021) and reporting over-optimistic performance (Nießl et al., n.d.), we present a carefully designed experimental setting to discern the effect of encoding strategies and their interaction with different ML algorithms.
 
 \hypertarget{notation}{%
 \subsection{Notation}\label{notation}}
@@ -189,12 +188,12 @@ We investigate categorical encoding techniques to transform each nominal feature
 \hypertarget{related-work}{%
 \subsection{Related Work}\label{related-work}}
 
-We broadly categorize feature encoding techniques into \emph{target-agnostic} methods and \emph{target-based} methods (Micci-Barreca, 2001).
+We broadly categorize feature encoding techniques into \emph{target-agnostic} methods and \emph{target-based} methods (Micci-Barreca 2001).
 Figure \ref{fig:overview} contains a taxonomy of our considered encoding methods. \emph{Target-agnostic} methods do not rely on any information about the target variable and can therefore also be used in unsupervised settings.
-Simple strategies from this domain e.g.~one-hot or dummy encoding are widely used -- in the scientific literature (Hancock and Khoshgoftaar, 2020; Kuhn and Johnson, 2019) but also on Kaggle\footnote{\url{https://www.kaggle.com}} to embed variables for classical ML algorithms as well as (deep) neural networks.
+Simple strategies from this domain e.g.~one-hot or dummy encoding are widely used -- in the scientific literature (Kuhn and Johnson 2019; Hancock and Khoshgoftaar 2020) but also on Kaggle\footnote{\url{https://www.kaggle.com}} to embed variables for classical ML algorithms as well as (deep) neural networks.
 Such indicator methods map each level of a categorical variable to a set of dichotomous features encoding the presence or absence of a particular level.
 An obvious drawback of indicator encoding is that it adds one additional feature per level of a categorical variable.
-When indicator encoding leads to an unreasonable number of features, levels are often mapped to integer values with random order (integer encoding). Alternatively, the ``hashing trick'' (Weinberger et al., 2009) can be used to randomly collapse feature levels into a smaller number of indicator variables (Kuhn and Johnson, 2019), or levels can be encoded by using the observed frequency of a given level in the dataset (frequency encoding).
+When indicator encoding leads to an unreasonable number of features, levels are often mapped to integer values with random order (integer encoding). Alternatively, the ``hashing trick'' (Weinberger et al. 2009) can be used to randomly collapse feature levels into a smaller number of indicator variables (Kuhn and Johnson 2019), or levels can be encoded by using the observed frequency of a given level in the dataset (frequency encoding).
 
 \tikzset{
   basic/.style  = {draw, text width=4cm, drop shadow, font=\sffamily \scriptsize, rectangle},
@@ -236,7 +235,7 @@ When indicator encoding leads to an unreasonable number of features, levels are 
 \end{figure}
 
 \emph{Target-based} methods try to incorporate information about the target values associated with a given level.
-Early strategies aimed to reduce the number of levels by methods like hierarchical clustering or decision trees based on statistics of the target variable, although this has been rarely described in the scientific literature (for a brief mention, see Micci-Barreca, 2001).
+Early strategies aimed to reduce the number of levels by methods like hierarchical clustering or decision trees based on statistics of the target variable, although this has been rarely described in the scientific literature (for a brief mention, see Micci-Barreca 2001).
 The basic idea of more advanced methods called target, impact, mean, or likelihood encoding is to use the training set to make a simple prediction of the target for each level of the categorical feature, and to use the prediction as the numerical feature value \(\hat{x}_l\) for the respective level.
 An early formal description of this strategy is Micci-Barreca (2001).
 In simple target encoding for regression problems, the mean target value in the training set from all observations with a certain feature level is used to encode that level for all observations: \(\hat{x}_l = \frac{\sum_{i:x^{train}_i = l}y^{train}_i}{N_l}\).
@@ -244,27 +243,27 @@ Simple target encoding often does not perform well with rare levels, where it te
 In the extreme case of a categorical feature with unique values (e.g.~some hashed ID variable) studied in Prokhorenkova et al. (2018), the mean target for each level of this feature in simple target encoding is similar to the true target value of a single observation.
 Based on the encoded feature, all observations can be predicted perfectly in the training set, even if the original variable did not contain any useful information.
 ML models would place a high priority on such an encoded feature during training but would perform badly on test data.
-To avoid this, practitioners often use regularized target encoding with a smoothing parameter that shrinks those effects towards the global mean (Micci-Barreca, 2001).
-An alternative strategy is to combine target encoding with cross-validation (CV) techniques (Prokhorenkova et al., 2018).
+To avoid this, practitioners often use regularized target encoding with a smoothing parameter that shrinks those effects towards the global mean (Micci-Barreca 2001).
+An alternative strategy is to combine target encoding with cross-validation (CV) techniques (Prokhorenkova et al. 2018).
 
 \hypertarget{categorical-encoding-benchmarks}{%
 \subsection{Categorical Encoding Benchmarks}\label{categorical-encoding-benchmarks}}
 
 Several small-scale studies have been previously conducted.
 Those works did not yield conclusive results due to narrower scopes or not considering high cardinality variables.
-One benchmark (\(6\) datasets) on encoding high cardinality features (cardinality between \(103\) and \(9095\)) in combination with gradient boosting has been published on the Kaggle forums (Prokopev, 2018).
+One benchmark (\(6\) datasets) on encoding high cardinality features (cardinality between \(103\) and \(9095\)) in combination with gradient boosting has been published on the Kaggle forums (Prokopev 2018).
 Different versions of target encoding are compared with indicator, integer, and frequency encoding.
 They recommend combining the smoothed version of target encoding with 4- or 5-fold CV, never using simple target encoding and using indicator encoding only for small datasets.
 Interestingly, frequency encoding did perform well in many cases.
-Coors (2018) performed a benchmark (\(12\) datasets) on encoding high cardinality features (maximum number of levels per dataset between 10 and 25847) when developing the automatic gradient boosting (autoxgboost) library (Thomas et al., 2018). They compared different variants of target encoding with integer and indicator encoding. In their benchmarks, target encoding only improved over target-agnostic methods on \(2\) datasets, while it led to worse results on 4 datasets. For a smaller number of levels, indicator and integer encoding yielded similar results.
+Coors (2018) performed a benchmark (\(12\) datasets) on encoding high cardinality features (maximum number of levels per dataset between 10 and 25847) when developing the automatic gradient boosting (autoxgboost) library (Thomas, Coors, and Bischl 2018). They compared different variants of target encoding with integer and indicator encoding. In their benchmarks, target encoding only improved over target-agnostic methods on \(2\) datasets, while it led to worse results on 4 datasets. For a smaller number of levels, indicator and integer encoding yielded similar results.
 As those studies only consider gradient boosting and a limited amount of datasets, it is unclear whether results generalize to other datasets and ML algorithms.
-A recent study (\(15\) datasets) found good performance of target encoding, but they only investigated categorical features in regression settings (Seca and Mendes-Moreira, 2021).
-Several other publications studied encoding text data based on similarity (Cerda et al., 2018; Cerda and Varoquaux, 2020) and employed indicator or target encoding as baselines.
+A recent study (\(15\) datasets) found good performance of target encoding, but they only investigated categorical features in regression settings (Seca and Mendes-Moreira 2021).
+Several other publications studied encoding text data based on similarity (Patricio Cerda, Varoquaux, and Kégl 2018; P. Cerda and Varoquaux 2020) and employed indicator or target encoding as baselines.
 Another line of work studies variable encodings employed within specific ML models.
 Wright and König (2019) study treatments for categorical variables in random forests together with dummy and integer encoding (18 datasets, cardinality between \(3\) and \(38\)), concluding that indicator and integer encoding perform subpar in comparison to methods that re-order levels according to the target variable.
 Prokhorenkova et al. (2018) compared their new CatBoost variant of target encoding to smoothed target encoding without CV, hold-out, and leave-one-out CV on \(8\) datasets.
 While the CatBoost method performed best, hold-out came second and target encoding without CV performed worst.
-An overview of encoding techniques tailored towards neural networks (e.g.~the widely adopted \emph{entity embeddings} by Guo and Berkhahn, 2016) is provided in Hancock and Khoshgoftaar (2020).
+An overview of encoding techniques tailored towards neural networks (e.g.~the widely adopted \emph{entity embeddings} by Guo and Berkhahn 2016) is provided in Hancock and Khoshgoftaar (2020).
 They present a survey of indicator- and embedding-based methods but no benchmark study.
 In contrast, our work is the first to focus on high cardinality variables and techniques that are agnostic to the subsequent ML method.
 We study this problem on a larger variety of datasets and settings.
@@ -328,9 +327,9 @@ As constructing all indicator variables is practically infeasible for high cardi
 \hypertarget{hash-encoding}{%
 \subsection{Hash Encoding}\label{hash-encoding}}
 
-Hash Encoding can be used to compute indicator variables based on a hash function (Weinberger et al., 2009).
+Hash Encoding can be used to compute indicator variables based on a hash function (Weinberger et al. 2009).
 The basic idea is to transform each feature level \(l\) into an integer \(hash(l) \in \mathbb{N}\), based on its label.
-This integer is then transformed into an indicator representation, with \(1\) in indicator column number \((hash(l) \mod hash.size) + 1\) and \(0\) in all remaining columns (Kuhn and Johnson, 2019).
+This integer is then transformed into an indicator representation, with \(1\) in indicator column number \((hash(l) \mod hash.size) + 1\) and \(0\) in all remaining columns (Kuhn and Johnson 2019).
 Some levels are hashed to the same indicator representation.
 The smaller the \(hash.size\), the higher the number of collapsed levels.
 The number of indicators is often effectively lower than \(hash.size\), as some indicators can be constant in the training set (we remove those columns for both training and prediction).
@@ -342,7 +341,7 @@ Although we could jointly hash multiple features, we hash each feature separatel
 Leaf encoding fits a decision tree on the training set to predict the target based on the categorical feature.
 Each level is encoded by the number of the terminal node, in which an observation with the respective level ends up.
 In that way, leaf encoding combines feature levels with similar target values.
-We use the rpart package in R (Therneau and Atkinson, 2018) which grows CARTs with categorical feature support that can be pruned based on internal performance estimates from 10-fold CV.
+We use the rpart package in R (Therneau and Atkinson 2018) which grows CARTs with categorical feature support that can be pruned based on internal performance estimates from 10-fold CV.
 Thus, our leaf encoder automatically uses an ``optimal'' number of new levels.
 To speed up the computation for multiclass classification, our implementation uses the ordering approach presented in Wright and König (2019).
 New levels are encoded with the arbitrary number of the terminal node with most observations during training.
@@ -358,16 +357,16 @@ The impact encoder for classification uses a logit link and transforms the origi
 A smoothing parameter \(\epsilon\) is introduced to avoid division by zero.
 This parameter could be used to further regularize towards the unconditional mean.
 We choose a small \(\epsilon = 0.0001\) as we want to compare simple target encoding with the regularized encoder introduced next.
-Weights of evidence encoding from the credit scoring classification literature (Hand and Henley, 1997) is almost identical to impact encoding, but without regularization or centering.
+Weights of evidence encoding from the credit scoring classification literature (Hand and Henley 1997) is almost identical to impact encoding, but without regularization or centering.
 
 \hypertarget{glmm-encoding}{%
 \subsection{GLMM Encoding}\label{glmm-encoding}}
 
-Smoothed target encoding (Micci-Barreca, 2001) can be interpreted as a simple (generalized) linear mixed model (glmm) in which the target is predicted by a random intercept for each feature level in addition to a fixed global intercept.
+Smoothed target encoding (Micci-Barreca 2001) can be interpreted as a simple (generalized) linear mixed model (glmm) in which the target is predicted by a random intercept for each feature level in addition to a fixed global intercept.
 This connection is described in Kuhn and Johnson (2019).
 To achieve regularized impact encoding, we implemented glmm encoders for regression, binary, and multiclass classification.
 The encoded value for each level is based on the spherical conditional mode estimates.
-In regression, the conditional modes are similar to the mean target value for each level, weighted by the relative observed frequency of that level in the training set Bates (2020).
+In regression, the conditional modes are similar to the mean target value for each level, weighted by the relative observed frequency of that level in the training set (Gelman and Hill 2006; Bates 2020).
 The estimate of the fixed intercept can be used during the prediction phase to encode new feature levels not observed in the training set.
 In multiclass classification, we fit \(C\) one vs.~rest glmms resulting in one encoded feature per class.
 An important advantage of using a glmm over impact encoding with a smoothing parameter is that a reasonable amount of regularization is determined automatically and tuning the complete ML pipeline is not necessary.
@@ -379,7 +378,7 @@ For each observation, there is exactly one glmm that did not use that observatio
 Note that the \(n.folds\) CV models (for \(n.folds\) \textgreater{} 1) are only used during the training phase.
 In the prediction phase, feature values are always encoded by a single glmm fitted to the complete training set.
 We study this method in three different settings: without CV (noCV), with \(5-\) (5CV) and with \(10-\) fold CV (10CV).
-In our study, we use the lmer (regression) and glmer (classification) functions from the lme4 package in R (Bates et al., 2015) as an efficient way to fit glmms.
+In our study, we use the lmer (regression) and glmer (classification) functions from the lme4 package in R (Bates et al. 2015) as an efficient way to fit glmms.
 
 \hypertarget{control-conditions}{%
 \subsection{Control Conditions}\label{control-conditions}}
@@ -389,7 +388,7 @@ The performance of a featureless learner (\textbf{FL} condition) was estimated a
 In regression problems, FL predicts the mean of the target variable in the training set for each observation in the test set.
 In classification problems, the most frequent class of the target within the training set is predicted.
 For each dataset, we also consider a RF without encoding (\textbf{none} condition), to compare the use of encoding methods with a natural categorical splitting approach.
-The ranger (Wright and Ziegler, 2017) implementation provides efficient categorical feature support by ordering levels once before starting the tree growing algorithm (Wright and König, 2019).
+The ranger (Wright and Ziegler 2017) implementation provides efficient categorical feature support by ordering levels once before starting the tree growing algorithm (Wright and König 2019).
 In the \textbf{remove} high cardinality features control condition, we omit features with a high number of levels above some threshold and use one-hot encoding (without collapsing rare levels) for the remaining features.
 This condition reflects on whether including high cardinality features does indeed improve predictive performance.
 Otherwise, the best encoding might just provide the least impairment compared to not including any high cardinality features.
@@ -403,8 +402,8 @@ We include an overview of available implementations in widely used ML frameworks
 
 A table showing a detailed summary of all benchmark datasets can be found in the Supplementary Material.
 We specifically investigate datasets that contain categorical variables with a large number of levels, including many well-known datasets
-from previous studies (Cerda et al., 2018; Coors, 2018; Kuhn and Johnson, 2019; Prokhorenkova et al., 2018).
-All datasets can be downloaded from the \texttt{OpenML} platform (Vanschoren et al., 2013) based on the name or the displayed OmlId.
+from previous studies (Patricio Cerda, Varoquaux, and Kégl 2018; Prokhorenkova et al. 2018; Coors 2018; Kuhn and Johnson 2019).
+All datasets can be downloaded from the \texttt{OpenML} platform (Vanschoren et al. 2013) based on the name or the displayed OmlId.
 The datasets include 8 regression, 10 binary classification, and 6 multiclass classification problems (between 3 and 12 classes).
 To assess the imbalance in categorical variables we computed the normalized entropy for each categorical variable.
 The maximum normalized entropy is \(1\), which corresponds to a uniform distribution, while a lower number indicates a larger imbalance.
@@ -422,8 +421,8 @@ To reflect this in our benchmark, a high cardinality threshold (HCT) parameter w
 For indicator encoding, the \(HCT - 1\) most frequent levels are encoded together with a single collapsed category for the remaining levels.
 For integer, frequency, hash, leaf, impact, and glmm encoders, only features with more than HCT levels in the training set were encoded with the respective strategy, while the remaining categorical features were one-hot encoded. HCT is used as the hash size in hash encoding.
 In the remove control condition, features with more than HCT levels in the training set are removed from the feature set.\footnote{Based on the number of categorical features and levels per feature, some HCT settings were removed from the benchmark for some combinations of dataset $\times$ encoder.
-This ensured that encoders always affect at least one feature and the remove condition always removes at least one feature.
-If settings where aan encoder would lead to identical encoding strategies for all features of a dataset, we only kept the condition with the smallest HCT value.}
+This ensured that encoders always affect at least one feature and that the remove condition always removes at least one feature.
+If settings where an encoder would lead to identical encoding strategies for all features of a dataset, we only kept the condition with the smallest HCT value.}
 
 \hypertarget{machine-learning-pipeline-and-algorithms}{%
 \subsection{Machine Learning Pipeline and Algorithms}\label{machine-learning-pipeline-and-algorithms}}
@@ -431,11 +430,11 @@ If settings where aan encoder would lead to identical encoding strategies for al
 \label{sec:pipeline}
 
 In total, we investigate \(5\) ML algorithms. We kept tuning their hyperparameters to a minimum because we were interested in the effect of the encoding techniques instead of a comparison of ML algorithms.
-LASSOs were fitted with \texttt{glmnet} (Friedman et al., 2010), internally tuning the regularization using 5-fold CV.
-RFs with \(500\) trees were trained using \texttt{ranger} (Wright and Ziegler, 2017) without tuning, because RFs can be expected to give reasonable results with default settings (Probst et al., 2019).
-GB models were trained using \texttt{xgboost} (Chen et al., 2018), setting the learning rate to \(0.01\) and determining the number of iterations using early stopping on a 20\% holdout set.
-KNN was taken from package \texttt{kknn} (Schliep and Hechenbichler, 2016) standardizing features and using a constant \(k=15\) for the number of nearest neighbors, together with an information gain filter (Brown et al., 2012) to limit the number of features to \(25\).
-SVMs with radial basis function kernel were trained with \texttt{liquidSVM} (Steinwart and Thomann, 2017).
+LASSOs were fitted with \texttt{glmnet} (Friedman, Hastie, and Tibshirani 2010), internally tuning the regularization using 5-fold CV.
+RFs with \(500\) trees were trained using \texttt{ranger} (Wright and Ziegler 2017) without tuning, because RFs can be expected to give reasonable results with default settings (Probst, Wright, and Boulesteix 2019).
+GB models were trained using \texttt{xgboost} (Chen et al. 2018), setting the learning rate to \(0.01\) and determining the number of iterations using early stopping on a 20\% holdout set.
+KNN was taken from package \texttt{kknn} (Schliep and Hechenbichler 2016) standardizing features and using a constant \(k=15\) for the number of nearest neighbors, together with an information gain filter (Brown et al. 2012) to limit the number of features to \(25\).
+SVMs with radial basis function kernel were trained with \texttt{liquidSVM} (Steinwart and Thomann 2017).
 The bandwidth and regularization parameters were internally tuned using 5-fold CV. We used a one-vs-all approach for multiclass-settings.
 
 The ML pipeline outlined below was used for all experimental conditions.
@@ -460,13 +459,13 @@ In the prediction phase, transformed feature values (based on the trained encode
 \hypertarget{performance-evaluation}{%
 \subsection{Performance Evaluation}\label{performance-evaluation}}
 
-We perform all analyses in the open-source statistical software R (R Core Team, 2021).
-To enable a fair and reliable comparison in our study, we implemented all encoding methods on top of the \texttt{mlrCPO} package (Binder, 2018).
-The pre-processing, as well as the final ML algorithm described in \ref{sec:pipeline}, were trained and resampled using the \texttt{mlr} framework (Bischl et al., 2016) together with the \texttt{batchtools} package (Lang et al., 2017) to scale the benchmark analysis to HPC compute infrastructure.
+We perform all analyses in the open-source statistical software R (R Core Team 2021).
+To enable a fair and reliable comparison in our study, we implemented all encoding methods on top of the \texttt{mlrCPO} package (Binder 2018).
+The pre-processing, as well as the final ML algorithm described in \ref{sec:pipeline}, were trained and resampled using the \texttt{mlr} framework (Bischl et al. 2016) together with the \texttt{batchtools} package (Lang, Bischl, and Surmann 2017) to scale the benchmark analysis to HPC compute infrastructure.
 All materials for this study, including reproducible code for this manuscript and result objects can be downloaded from our \textbf{online repository} \footnote{\url{https://github.com/slds-lmu/paper_2021_categorical_feature_encodings}}.
 
 Throughout our experiments, we use 5-fold CV to obtain estimates of predictive performance.
-Depending on the target variable, we report root mean squared error (RMSE) for regression, area under the curve (AUC) for binary classification, and its extension AUNU (Ferri et al., 2009) for multiclass problems.
+Depending on the target variable, we report root mean squared error (RMSE) for regression, area under the curve (AUC) for binary classification, and its extension AUNU (Ferri, Hernández-Orallo, and Modroiu 2009) for multiclass problems.
 
 In our benchmark study, each encoding method listed in Section \ref{sec:methods} is combined with all ML algorithms (c.f. Section \ref{sec:pipeline}) across
 high cardinality thresholds (HCT) \(10\), \(25\), \(125\).
@@ -508,7 +507,7 @@ Mean performance estimates along with minimum and maximum performance are report
 To reduce the complexity induced by the hyperparameter HCT we only display the parameter condition with the best performance for each combination of dataset \(\times\) encoding \(\times\) ML algorithm.
 The y-axis differs for all datasets and is reversed for the RMSE for better visual comparison.
 For some datasets, the remove condition performed very similar to the other encodings (e.g.~\emph{ames-housing}, \emph{porto-seguro}), suggesting that categorical features were not informative.
-Performance in some CV folds was below the FL learner for \emph{flight-delay-usa-dec-2017} (\(RMSE_{FL} =\) 48.8052624) and \emph{nyc-taxi-green-dec-2016} (\(RMSE_{FL} =\) 2.2152442).
+Performance in some CV folds was below the FL learner for \emph{flight-delay-usa-dec-2017} (\(RMSE_{FL} =\) 48.81) and \emph{nyc-taxi-green-dec-2016} (\(RMSE_{FL} =\) 2.22).
 
 On datasets with substantive performance differences, target encoding with the glmm encoder was generally \textbf{most} effective.
 The \textbf{worst} encoder differed by ML algorithm and dataset.
@@ -517,15 +516,15 @@ For datasets \emph{Click\_prediction\_small}, \emph{KDDCup09\_upselling}, \emph{
 \hypertarget{meta-rankings-and-dataset-clustering}{%
 \subsection{Meta Rankings and Dataset Clustering}\label{meta-rankings-and-dataset-clustering}}
 
-To further analyze our results, we used statistical inference methods inspired by the benchmark community in computational statistics (e.g., Hothorn et al., 2005).
+To further analyze our results, we used statistical inference methods inspired by the benchmark community in computational statistics (e.g., Hothorn et al. 2005).
 First, we present meta rankings for each ML algorithm in Figure \ref{fig:rank-res}:
-We defined an encoder relation within each dataset, based on corrected resample t-tests (Nadeau and Bengio, 2003).
+We defined an encoder relation within each dataset, based on corrected resample t-tests (Nadeau and Bengio 2003).
 An encoding was defined to beat another encoding if the one-sided p-value of the t-test was \(< .05\).
 This allowed us to compute a weak-order consensus ranking \(R\) defined by the optimization problem:
 
 \[ \underset{R \in \mathcal{C}}{arg\ min} \ \sum_{b=1}^B d(R_b, R)\]
 
-where \(d\) is the symmetric difference distance and \(R_b\) is the relation for dataset \(b\) (Hornik and Meyer, 2007; Meyer and Hornik, 2018).
+where \(d\) is the symmetric difference distance and \(R_b\) is the relation for dataset \(b\) (Hornik and Meyer 2007; Meyer and Hornik 2018).
 The symmetric difference between two relations is the number of cases one encoding beats another encoding in one relation but not in the other one.
 
 
@@ -563,12 +562,12 @@ Regularized target encoding was superior or at least competitive on all datasets
 We could not observe a setting in which regularized target encoding was convincingly beaten by target agnostic methods.
 Especially effective was glmm encoding with 5-fold-CV, which ranked first place for all ML algorithms except SVM.
 Performance often did not improve with glmm-10CV, suggesting that 5 folds might be a good regularization default in practice.
-In line with earlier research (Micci-Barreca, 2001; Prokhorenkova et al., 2018), target encoding with regularization (glmm) performed better or equally well in comparison with the unregularized impact encoder.
+In line with earlier research (Micci-Barreca 2001; Prokhorenkova et al. 2018), target encoding with regularization (glmm) performed better or equally well in comparison with the unregularized impact encoder.
 When glmm performed better, impact encoding not only performed worse than glmm with CV but was sometimes also inferior compared to other encoders.
 
 The following observations were also interesting:
 Surprisingly, integer encoding did not perform well with GB and target-based encoders (especially the glmm encoder) seem to be preferable.
-For LASSO, previous studies have suggested that indicator encoding works well, even with a very high number of levels (Cerda et al., 2018).
+For LASSO, previous studies have suggested that indicator encoding works well, even with a very high number of levels (Patricio Cerda, Varoquaux, and Kégl 2018).
 Although the glmm encoders ranked first in our benchmark for the LASSO, it was the only algorithm where the indicator encoders achieved the next best ranking.
 Note that for computational reasons we limited the maximum amount of indicator variables per feature to 125 in our experimental design.
 The HCT = 125 setting performed best for LASSO with indicator encoding in a large number of datasets, indicating that performance might have further improved with higher values.
@@ -578,9 +577,10 @@ This was backed by our benchmark results.
 For some datasets (\emph{medical\_charges}, \emph{road-safety-drivers-sex}, and \emph{Midwest\_survey}) KNN (without tuning of the optimal number of nearest neighbors) could compete with the more sophisticated ML algorithms when combined with target encoding, but performed poorly with other encoders.
 Although consistent with the big picture, SVM results have to be considered with care, as some experimental conditions resulted in unexpected computational errors.
 In RF, a widely used strategy to deal with categorical features is to order levels by average target statistics for a given level.
-For a small number of levels, this approach has been reported superior to indicator and integer encoding (Wright and König, 2019), while we observed poor performance for datasets with a larger number of levels.
+For a small number of levels, this approach has been reported superior to indicator and integer encoding (Wright and König 2019), while we observed poor performance for datasets with a larger number of levels.
+
 When looking for a simple default encoding, indicator encoding in combination with collapsing small levels seems a robust alternative, although the glmm encoders performed better.
-We found that one-hot encoding usually gave a slightly better performance than dummy encoding, which has also been observed by Chiquet et al. (2016) and Tutz and Gertheiss (2016) (p.254).
+We found that one-hot encoding usually gave a slightly better performance than dummy encoding, which has also been observed by Chiquet, Grandvalet, and Rigaill (2016) and Tutz and Gertheiss (2016) (p.254).
 Our results suggest that one-hot encoding is the better standard compared to dummy encoding when applying nonlinear regularized models like RF, GB or SVM with (high cardinal) categorical features.
 We provide a more detailed comparison for indicator encoding in the Supplementary Material.
 
@@ -661,7 +661,7 @@ Regularized target encoding was superior across most datasets and ML algorithms.
 Although the performance of other encoding strategies was comparable in some conditions, target encoding was never outperformed.
 In general, our results suggest that regularized target encoding based on glmms with 5-fold CV (glmm-5CV) works well for all kinds of algorithms and should be a reasonable default strategy.
 It sometimes leads to slightly longer runtimes (in comparison to indicator encoding), but especially for larger datasets this is often offset by the more efficient representation produced by target encoding.
-The glmm encoder has a clear advantage over target encoding with a smoothing hyperparameter (Micci-Barreca, 2001), as costly tuning the whole ML pipeline with different smoothing values is not required.
+The glmm encoder has a clear advantage over target encoding with a smoothing hyperparameter (Micci-Barreca 2001), as costly tuning the whole ML pipeline with different smoothing values is not required.
 
 What constitutes a ``high'' cardinality problem is a difficult question that might not only depend on the number of levels but also on other characteristics of the dataset and its features.
 Supposedly, the number of datasets in our study was too small to discover consistent patterns between encoder performance and dataset characteristics.
@@ -682,18 +682,18 @@ This probably led to suboptimal performance for the GB, KNN, and SVM learners.
 When interpreting our results, we assume that the encoder rankings are comparable when more extensive tuning is used.
 This is plausible because the meta rankings between algorithms were highly stable.
 We only used 5-fold-CV without repetitions to estimate predictive performance, but due to a small variance between folds, we could confidently detect performance differences of encoders for many datasets.
-Because we are interested in model-agnostic methods that can be combined with any supervised ML algorithm, we did not investigate recent model-specific strategies (Guo and Berkhahn, 2016; Prokhorenkova et al., 2018).
+Because we are interested in model-agnostic methods that can be combined with any supervised ML algorithm, we did not investigate recent model-specific strategies (Guo and Berkhahn 2016; Prokhorenkova et al. 2018).
 We did not include deep neural networks in our benchmark because they are still rarely applied in the statistical learning community and more dominant in computer science.
 We do not differentiate between nominal and ordinal categorical features:
 Most publicly available datasets simply do not contain any high cardinal ordinal features.
 For many applications, ordinal feature information is not available as metadata which makes it less relevant for some applications like automatic ML.
-Thus, our benchmark does not include specific ordinal encoding methods like Helmert and Polynomial contrasts (Chambers and Hastie, 1992) or ordinal penalization methods (Tutz and Gertheiss, 2016).
-We only investigate traditional categorical variables and do not extend our analysis to multi-categorical variables or text-strings (Cerda et al., 2018; Cerda and Varoquaux, 2020), where other encoding techniques can harvest additional information.
+Thus, our benchmark does not include specific ordinal encoding methods like Helmert and Polynomial contrasts (Chambers and Hastie 1992) or ordinal penalization methods (Tutz and Gertheiss 2016).
+We only investigate traditional categorical variables and do not extend our analysis to multi-categorical variables or text-strings (Patricio Cerda, Varoquaux, and Kégl 2018; P. Cerda and Varoquaux 2020), where other encoding techniques can harvest additional information.
 We only investigate univariate encodings, i.e.~we always encode each variable separately.
 Levels with comparable main effects can not be distinguished based on the transformed feature, which prevents the consecutive ML algorithm from learning interactions for specific levels.
 Methods that jointly encode features and therefore leverage correlational structures between features are an interesting avenue for future research:
-Recent approaches use target-based encoding strategies to learn a vector-valued representation of a level, similar to neural network embeddings (Guo and Berkhahn, 2016; Rodríguez et al., 2018).
-Those should be compared to classical approaches from the optimal scaling literature (e.g. De Leeuw et al., 1976; Young et al., 1976) or the subsequent \emph{aspect} framework (Mair and Leeuw, 2010), which are unfortunately unfamiliar to many ML researchers.
+Recent approaches use target-based encoding strategies to learn a vector-valued representation of a level, similar to neural network embeddings (Guo and Berkhahn 2016; Rodríguez et al. 2018).
+Those should be compared to classical approaches from the optimal scaling literature (e.g. De Leeuw, Young, and Takane 1976; Young, De Leeuw, and Takane 1976) or the subsequent \emph{aspect} framework (Mair and Leeuw 2010), which are unfortunately unfamiliar to many ML researchers.
 
 \hypertarget{conclusion}{%
 \subsection{Conclusion}\label{conclusion}}
@@ -736,160 +736,160 @@ All benchmark datasets are publicly available at \url{https://www.openml.org/}.
 \hypertarget{refs}{}
 \begin{CSLReferences}{1}{0}
 \leavevmode\vadjust pre{\hypertarget{ref-bates_2018}{}}%
-Bates, D., 2020. Computational methods for mixed models. Vignette for lme4.
+Bates, Douglas. 2020. {``Computational Methods for Mixed Models.''} \emph{Vignette for Lme4}. \url{https://cran.r-project.org/web/packages/lme4/vignettes/Theory.pdf}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-bates_2015}{}}%
-Bates, D., Mächler, M., Bolker, B., Walker, S., 2015. Fitting linear mixed-effects models using {lme4}. Journal of Statistical Software 67, 1--48. doi:\href{https://doi.org/10.18637/jss.v067.i01}{10.18637/jss.v067.i01}
+Bates, Douglas, Martin Mächler, Ben Bolker, and Steve Walker. 2015. {``Fitting Linear Mixed-Effects Models Using {lme4}.''} \emph{Journal of Statistical Software} 67 (1): 1--48. \url{https://doi.org/10.18637/jss.v067.i01}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-binder_2018}{}}%
-Binder, M., 2018. mlrCPO: Composable preprocessing operators and pipelines for machine learning.
+Binder, Martin. 2018. \emph{mlrCPO: Composable Preprocessing Operators and Pipelines for Machine Learning}. \url{https://github.com/mlr-org/mlrCPO}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-bischl_2016}{}}%
-Bischl, B., Lang, M., Kotthoff, L., Schiffner, J., Richter, J., Studerus, E., Casalicchio, G., Jones, Z.M., 2016. {mlr}: Machine learning in r. Journal of Machine Learning Research 17, 1--5.
+Bischl, Bernd, Michel Lang, Lars Kotthoff, Julia Schiffner, Jakob Richter, Erich Studerus, Giuseppe Casalicchio, and Zachary M. Jones. 2016. {``{mlr}: Machine Learning in r.''} \emph{Journal of Machine Learning Research} 17 (170): 1--5. \url{http://jmlr.org/papers/v17/15-066.html}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-bommert}{}}%
-Bommert, A., Sun, X., Bischl, B., Rahnenführer, J., Lang, M., 2020. Benchmark for filter methods for feature selection in high-dimensional classification data. Computational Statistics \& Data Analysis 143. doi:\href{https://doi.org/10.1016/j.csda.2019.106839}{10.1016/j.csda.2019.106839}
+Bommert, Andrea, Xudong Sun, Bernd Bischl, Jörg Rahnenführer, and Michel Lang. 2020. {``Benchmark for Filter Methods for Feature Selection in High-Dimensional Classification Data.''} \emph{Computational Statistics \& Data Analysis} 143 (C). \url{https://doi.org/10.1016/j.csda.2019.106839}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-boulesteix_2017}{}}%
-Boulesteix, A.-L., Binder, H., Abrahamowicz, M., Sauerbrei, W., others, 2017. On the necessity and design of studies comparing statistical methods. Biometrical journal. Biometrische Zeitschrift 60, 216--218. doi:\href{https://doi.org/10.1002/bimj.201700129}{10.1002/bimj.201700129}
+Boulesteix, Anne-Laure, Harald Binder, Michal Abrahamowicz, Willi Sauerbrei, et al. 2017. {``On the Necessity and Design of Studies Comparing Statistical Methods.''} \emph{Biometrical Journal. Biometrische Zeitschrift} 60 (1): 216--18. \url{https://doi.org/10.1002/bimj.201700129}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-brown2012}{}}%
-Brown, G., Pocock, A., Ming-Jie, Z., Luján, M., 2012. Conditional likelihood maximisation: A unifying framework for information theoretic feature selection. Journal of Machine Learning Research 13, 27--66.
-
-\leavevmode\vadjust pre{\hypertarget{ref-cerda_2020}{}}%
-Cerda, P., Varoquaux, G., 2020. Encoding high-cardinality string categorical variables. IEEE Transactions on Knowledge and Data Engineering 1--1. doi:\href{https://doi.org/10.1109/TKDE.2020.2992529}{10.1109/TKDE.2020.2992529}
+Brown, Gavin, Adam Pocock, Zhao Ming-Jie, and Mikel Luján. 2012. {``Conditional Likelihood Maximisation: A Unifying Framework for Information Theoretic Feature Selection.''} \emph{Journal of Machine Learning Research} 13 (January): 27--66.
 
 \leavevmode\vadjust pre{\hypertarget{ref-cerda_2018}{}}%
-Cerda, P., Varoquaux, G., Kégl, B., 2018. Similarity encoding for learning with dirty categorical variables. Machine Learning 107, 1477--1494. doi:\href{https://doi.org/10.1007/s10994-018-5724-2}{10.1007/s10994-018-5724-2}
+Cerda, Patricio, Gaël Varoquaux, and Balázs Kégl. 2018. {``Similarity Encoding for Learning with Dirty Categorical Variables.''} \emph{Machine Learning} 107 (8): 1477--94. \url{https://doi.org/10.1007/s10994-018-5724-2}.
+
+\leavevmode\vadjust pre{\hypertarget{ref-cerda_2020}{}}%
+Cerda, P., and G. Varoquaux. 2020. {``Encoding High-Cardinality String Categorical Variables.''} \emph{IEEE Transactions on Knowledge and Data Engineering}, 1--1. \url{https://doi.org/10.1109/TKDE.2020.2992529}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-chambers_1992}{}}%
-Chambers, J., Hastie, T., 1992. Statistical models. Chapter 2 of statistical models in s. Wadsworth \& Brooks/Cole.
+Chambers, JM, and TJ Hastie. 1992. {``Statistical Models. Chapter 2 of Statistical Models in s (1st Ed.).''} \emph{Routledge}. https://doi.org/\url{https://doi.org/10.1201/9780203738535}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-chen_2018}{}}%
-Chen, T., He, T., Benesty, M., Khotilovich, V., Tang, Y., Cho, H., Chen, K., Mitchell, R., Cano, I., Zhou, T., Li, M., Xie, J., Lin, M., Geng, Y., Li, Y., 2018. Xgboost: Extreme gradient boosting.
+Chen, Tianqi, Tong He, Michael Benesty, Vadim Khotilovich, Yuan Tang, Hyunsu Cho, Kailong Chen, et al. 2018. \emph{Xgboost: Extreme Gradient Boosting}. \url{https://CRAN.R-project.org/package=xgboost}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-chiquet_2016}{}}%
-Chiquet, J., Grandvalet, Y., Rigaill, G., 2016. On coding effects in regularized categorical regression. Statistical Modelling 16, 228--237. doi:\href{https://doi.org/10.1177/1471082X16644998}{10.1177/1471082X16644998}
+Chiquet, Julien, Yves Grandvalet, and Guillem Rigaill. 2016. {``On Coding Effects in Regularized Categorical Regression.''} \emph{Statistical Modelling} 16 (3): 228--37. \url{https://doi.org/10.1177/1471082X16644998}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-coors_2018}{}}%
-Coors, S., 2018. Automatic gradient boosting (Master's thesis). LMU Munich.
+Coors, Stefan. 2018. {``Automatic Gradient Boosting.''} Master's thesis, LMU Munich. \url{https://epub.ub.uni-muenchen.de/59108/1/MA_Coors.pdf}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-deleeuw_1976}{}}%
-De Leeuw, J., Young, F.W., Takane, Y., 1976. Additive structure in qualitative data: An alternating least squares method with optimal scaling features. Psychometrika 41, 471--503.
+De Leeuw, Jan, Forrest W Young, and Yoshio Takane. 1976. {``Additive Structure in Qualitative Data: An Alternating Least Squares Method with Optimal Scaling Features.''} \emph{Psychometrika} 41 (4): 471--503.
 
 \leavevmode\vadjust pre{\hypertarget{ref-dehghani2021benchmark}{}}%
-Dehghani, M., Tay, Y., Gritsenko, A.A., Zhao, Z., Houlsby, N., Diaz, F., Metzler, D., Vinyals, O., 2021. The benchmark lottery.
+Dehghani, Mostafa, Yi Tay, Alexey A. Gritsenko, Zhe Zhao, Neil Houlsby, Fernando Diaz, Donald Metzler, and Oriol Vinyals. 2021. {``The Benchmark Lottery.''} \url{https://arxiv.org/abs/2107.07002}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-delgado}{}}%
-Fernández-Delgado, M., Cernadas, E., Barro, S., Amorim, D., 2014. Do we need hundreds of classifiers to solve real world classification problems? Journal of Machine Learning Research 15, 3133--3181.
+Fernández-Delgado, Manuel, Eva Cernadas, Senén Barro, and Dinani Amorim. 2014. {``Do We Need Hundreds of Classifiers to Solve Real World Classification Problems?''} \emph{Journal of Machine Learning Research} 15 (90): 3133--81. \url{http://jmlr.org/papers/v15/delgado14a.html}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-ferri_2009}{}}%
-Ferri, C., Hernández-Orallo, J., Modroiu, R., 2009. An experimental comparison of performance measures for classification. Pattern Recognition Letters 30, 27--38. doi:\href{https://doi.org/10.1016/j.patrec.2008.08.010}{10.1016/j.patrec.2008.08.010}
+Ferri, C., J. Hernández-Orallo, and R. Modroiu. 2009. {``An Experimental Comparison of Performance Measures for Classification.''} \emph{Pattern Recognition Letters} 30 (1): 27--38. \url{https://doi.org/10.1016/j.patrec.2008.08.010}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-feurer_2015}{}}%
-Feurer, M., Klein, A., Eggensperger, K., Springenberg, J., Blum, M., Hutter, F., 2015. Efficient and robust automated machine learning, in: Cortes, C., Lawrence, N.D., Lee, D.D., Sugiyama, M., Garnett, R. (Eds.), Advances in Neural Information Processing Systems 28. Curran Associates, Inc., pp. 2962--2970.
+Feurer, Matthias, Aaron Klein, Katharina Eggensperger, Jost Springenberg, Manuel Blum, and Frank Hutter. 2015. {``Efficient and Robust Automated Machine Learning.''} In \emph{Advances in Neural Information Processing Systems 28}, edited by C. Cortes, N. D. Lawrence, D. D. Lee, M. Sugiyama, and R. Garnett, 2962--70. Curran Associates, Inc. \url{http://papers.nips.cc/paper/5872-efficient-and-robust-automated-machine-learning.pdf}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-friedman_2010}{}}%
-Friedman, J., Hastie, T., Tibshirani, R., 2010. Regularization paths for generalized linear models via coordinate descent. Journal of Statistical Software 33, 1--22. doi:\href{https://doi.org/10.18637/jss.v033.i01}{10.18637/jss.v033.i01}
+Friedman, Jerome, Trevor Hastie, and Robert Tibshirani. 2010. {``Regularization Paths for Generalized Linear Models via Coordinate Descent.''} \emph{Journal of Statistical Software} 33 (1): 1--22. \url{https://doi.org/10.18637/jss.v033.i01}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-gelman_2006}{}}%
-Gelman, A., Hill, J., 2006. Data analysis using regression and multilevel/hierarchical models. Cambridge university press.
+Gelman, Andrew, and Jennifer Hill. 2006. \emph{Data Analysis Using Regression and Multilevel/Hierarchical Models}. Cambridge university press.
 
 \leavevmode\vadjust pre{\hypertarget{ref-grabczewski_2003}{}}%
-Grąbczewski, K., Jankowski, N., 2003. Transformations of symbolic data for continuous data oriented models, in: Kaynak, O., Alpaydin, E., Oja, E., Xu, L. (Eds.), Artificial Neural Networks and Neural Information Processing --- ICANN/ICONIP 2003. Springer Berlin Heidelberg, Berlin, Heidelberg, pp. 359--366.
+Grąbczewski, Krzysztof, and Norbert Jankowski. 2003. {``Transformations of Symbolic Data for Continuous Data Oriented Models.''} In \emph{Artificial Neural Networks and Neural Information Processing --- ICANN/ICONIP 2003}, edited by Okyay Kaynak, Ethem Alpaydin, Erkki Oja, and Lei Xu, 359--66. Berlin, Heidelberg: Springer Berlin Heidelberg.
 
 \leavevmode\vadjust pre{\hypertarget{ref-guo_2016}{}}%
-Guo, C., Berkhahn, F., 2016. Entity embeddings of categorical variables. arXiv preprint arXiv:1604.06737.
+Guo, Cheng, and Felix Berkhahn. 2016. {``Entity Embeddings of Categorical Variables.''} \emph{arXiv Preprint arXiv:1604.06737}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-hancock}{}}%
-Hancock, J.T., Khoshgoftaar, T.M., 2020. Survey on categorical data for neural networks. Journal of Big Data 7, 1--41. doi:\href{https://doi.org/10.1186/s40537-020-00305-w}{10.1186/s40537-020-00305-w}
+Hancock, John T, and Taghi M Khoshgoftaar. 2020. {``Survey on Categorical Data for Neural Networks.''} \emph{Journal of Big Data} 7: 1--41. \url{https://doi.org/10.1186/s40537-020-00305-w}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-hand_1997}{}}%
-Hand, D.J., Henley, W.E., 1997. Statistical classification methods in consumer credit scoring: A review. Journal of the Royal Statistical Society: Series A (Statistics in Society) 160, 523--541. doi:\href{https://doi.org/10.1111/j.1467-985X.1997.00078.x}{10.1111/j.1467-985X.1997.00078.x}
+Hand, D. J., and W. E. Henley. 1997. {``Statistical Classification Methods in Consumer Credit Scoring: A Review.''} \emph{Journal of the Royal Statistical Society: Series A (Statistics in Society)} 160 (3): 523--41. \url{https://doi.org/10.1111/j.1467-985X.1997.00078.x}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-hornik_2007}{}}%
-Hornik, K., Meyer, D., 2007. Deriving consensus rankings from benchmarking experiments, in: Advances in Data Analysis. Springer, pp. 163--170. doi:\href{https://doi.org/10.1007/978-3-540-70981-7_19}{10.1007/978-3-540-70981-7\_19}
+Hornik, Kurt, and David Meyer. 2007. {``Deriving Consensus Rankings from Benchmarking Experiments.''} In \emph{Advances in Data Analysis}, 163--70. Springer. \url{https://doi.org/10.1007/978-3-540-70981-7_19}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-hothorn_2005}{}}%
-Hothorn, T., Leisch, F., Zeileis, A., Hornik, K., 2005. The design and analysis of benchmark experiments. Journal of Computational and Graphical Statistics 14, 675--699. doi:\href{https://doi.org/10.1198/106186005X59630}{10.1198/106186005X59630}
+Hothorn, Torsten, Friedrich Leisch, Achim Zeileis, and Kurt Hornik. 2005. {``The Design and Analysis of Benchmark Experiments.''} \emph{Journal of Computational and Graphical Statistics} 14 (3): 675--99. \url{https://doi.org/10.1198/106186005X59630}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-kuhn_2019}{}}%
-Kuhn, M., Johnson, K., 2019. Feature engineering and selection: A practical approach for predictive models. Chapman; Hall/CRC.
+Kuhn, Max, and Kjell Johnson. 2019. \emph{Feature Engineering and Selection: A Practical Approach for Predictive Models}. Chapman; Hall/CRC. \url{http://www.feat.engineering/index.html}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-lang_2017}{}}%
-Lang, M., Bischl, B., Surmann, D., 2017. Batchtools: Tools for r to work on batch systems. The Journal of Open Source Software 2. doi:\href{https://doi.org/10.21105/joss.00135}{10.21105/joss.00135}
+Lang, Michel, Bernd Bischl, and Dirk Surmann. 2017. {``Batchtools: Tools for r to Work on Batch Systems.''} \emph{The Journal of Open Source Software} 2 (10). \url{https://doi.org/10.21105/joss.00135}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-mair_2010}{}}%
-Mair, P., Leeuw, J. de, 2010. A general framework for multivariate analysis with optimal scaling: The r package aspect. Journal of Statistical Software 32, 1--23. doi:\href{https://doi.org/10.18637/jss.v032.i09}{10.18637/jss.v032.i09}
+Mair, Patrick, and Jan de Leeuw. 2010. {``A General Framework for Multivariate Analysis with Optimal Scaling: The r Package Aspect.''} \emph{Journal of Statistical Software} 32 (1): 1--23. \url{https://doi.org/10.18637/jss.v032.i09}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-meyer_2018}{}}%
-Meyer, D., Hornik, K., 2018. Relations: Data structures and algorithms for relations.
+Meyer, David, and Kurt Hornik. 2018. \emph{Relations: Data Structures and Algorithms for Relations}. \url{https://CRAN.R-project.org/package=relations}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-micci_barreca_2001}{}}%
-Micci-Barreca, D., 2001. A preprocessing scheme for high-cardinality categorical attributes in classification and prediction problems. SIGKDD Explor. Newsl. 3, 27--32. doi:\href{https://doi.org/10.1145/507533.507538}{10.1145/507533.507538}
+Micci-Barreca, Daniele. 2001. {``A Preprocessing Scheme for High-Cardinality Categorical Attributes in Classification and Prediction Problems.''} \emph{SIGKDD Explor. Newsl.} 3 (1): 27--32. \url{https://doi.org/10.1145/507533.507538}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-nadeau_2003}{}}%
-Nadeau, C., Bengio, Y., 2003. Inference for the generalization error. Machine Learning 52, 239--281. doi:\href{https://doi.org/10.1023/A:1024068626366}{10.1023/A:1024068626366}
+Nadeau, Claude, and Yoshua Bengio. 2003. {``Inference for the Generalization Error.''} \emph{Machine Learning} 52 (3): 239--81. \url{https://doi.org/10.1023/A:1024068626366}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-niesl2021overoptimism}{}}%
-Nie{\ss}l, C., Herrmann, M., Wiedemann, C., Casalicchio, G., Boulesteix, A.-L., 2021. Over-optimism in benchmark studies and the multiplicity of design and analysis options when interpreting their results.
+Nießl, Christina, Moritz Herrmann, Chiara Wiedemann, Giuseppe Casalicchio, and Anne-Laure Boulesteix. n.d. {``Over-Optimism in Benchmark Studies and the Multiplicity of Design and Analysis Options When Interpreting Their Results.''} \emph{WIREs Data Mining and Knowledge Discovery} n/a (n/a): e1441. https://doi.org/\url{https://doi.org/10.1002/widm.1441}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-probst_2019}{}}%
-Probst, P., Wright, M.N., Boulesteix, A.-L., 2019. Hyperparameters and tuning strategies for random forest. Wiley Interdisciplinary Reviews: Data Mining and Knowledge Discovery 0, e1301. doi:\href{https://doi.org/10.1002/widm.1301}{10.1002/widm.1301}
+Probst, Philipp, Marvin N. Wright, and Anne-Laure Boulesteix. 2019. {``Hyperparameters and Tuning Strategies for Random Forest.''} \emph{Wiley Interdisciplinary Reviews: Data Mining and Knowledge Discovery} 0 (0): e1301. \url{https://doi.org/10.1002/widm.1301}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-prokhorenkova_2018}{}}%
-Prokhorenkova, L., Gusev, G., Vorobev, A., Dorogush, A.V., Gulin, A., 2018. CatBoost: Unbiased boosting with categorical features, in: Bengio, S., Wallach, H., Larochelle, H., Grauman, K., Cesa-Bianchi, N., Garnett, R. (Eds.), Advances in Neural Information Processing Systems 31. Curran Associates, Inc., pp. 6638--6648.
+Prokhorenkova, Liudmila, Gleb Gusev, Aleksandr Vorobev, Anna Veronika Dorogush, and Andrey Gulin. 2018. {``CatBoost: Unbiased Boosting with Categorical Features.''} In \emph{Advances in Neural Information Processing Systems 31}, edited by S. Bengio, H. Wallach, H. Larochelle, K. Grauman, N. Cesa-Bianchi, and R. Garnett, 6638--48. Curran Associates, Inc. \url{http://papers.nips.cc/paper/7898-catboost-unbiased-boosting-with-categorical-features.pdf}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-prokopev_2018}{}}%
-Prokopev, V., 2018. Mean (likelihood) encodings: A comprehensive study. Kaggle Forums.
+Prokopev, Viacheslav. 2018. {``Mean (Likelihood) Encodings: A Comprehensive Study.''} \emph{Kaggle Forums}. Kaggle. \url{https://www.kaggle.com/vprokopev/mean-likelihood-encodings-a-comprehensive-study}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-r_2021}{}}%
-R Core Team, 2021. R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria.
+R Core Team. 2021. \emph{R: A Language and Environment for Statistical Computing}. Vienna, Austria: R Foundation for Statistical Computing. \url{https://www.R-project.org/}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-rodriguez_2018}{}}%
-Rodríguez, P., Bautista, M.A., Gonzàlez, J., Escalera, S., 2018. Beyond one-hot encoding: Lower dimensional target embedding. Image and Vision Computing 75, 21--31. doi:\url{https://doi.org/10.1016/j.imavis.2018.04.004}
+Rodríguez, Pau, Miguel A. Bautista, Jordi Gonzàlez, and Sergio Escalera. 2018. {``Beyond One-Hot Encoding: Lower Dimensional Target Embedding.''} \emph{Image and Vision Computing} 75: 21--31. https://doi.org/\url{https://doi.org/10.1016/j.imavis.2018.04.004}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-schliep_2016}{}}%
-Schliep, K., Hechenbichler, K., 2016. Kknn: Weighted k-nearest neighbors.
+Schliep, Klaus, and Klaus Hechenbichler. 2016. \emph{Kknn: Weighted k-Nearest Neighbors}. \url{https://CRAN.R-project.org/package=kknn}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-seca_2021}{}}%
-Seca, D., Mendes-Moreira, J., 2021. Benchmark of encoders of nominal features for regression, in: Rocha, Á., Adeli, H., Dzemyda, G., Moreira, F., Ramalho Correia, A.M. (Eds.), Trends and Applications in Information Systems and Technologies. Springer International Publishing, Cham, pp. 146--155.
+Seca, Diogo, and João Mendes-Moreira. 2021. {``Benchmark of Encoders of Nominal Features for Regression.''} In \emph{Trends and Applications in Information Systems and Technologies}, edited by Álvaro Rocha, Hojjat Adeli, Gintautas Dzemyda, Fernando Moreira, and Ana Maria Ramalho Correia, 146--55. Cham: Springer International Publishing.
 
 \leavevmode\vadjust pre{\hypertarget{ref-steinwart_2017}{}}%
-Steinwart, I., Thomann, P., 2017. {liquidSVM}: A fast and versatile SVM package. {ArXiv e-prints 1702.06899}.
+Steinwart, Ingo, and Philipp Thomann. 2017. {``{liquidSVM}: A Fast and Versatile SVM Package.''} \emph{{ArXiv e-Prints 1702.06899}}, February. \url{http://www.isa.uni-stuttgart.de/software}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-therneau_2018}{}}%
-Therneau, T., Atkinson, B., 2018. Rpart: Recursive partitioning and regression trees.
+Therneau, Terry, and Beth Atkinson. 2018. \emph{Rpart: Recursive Partitioning and Regression Trees}. \url{https://CRAN.R-project.org/package=rpart}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-thomas_2018}{}}%
-Thomas, J., Coors, S., Bischl, B., 2018. Automatic gradient boosting.
+Thomas, Janek, Stefan Coors, and Bernd Bischl. 2018. \emph{Automatic Gradient Boosting}. \url{http://arxiv.org/abs/1807.03873v2}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-thornton_2013}{}}%
-Thornton, C., Hutter, F., Hoos, H.H., Leyton-Brown, K., 2013. Auto-WEKA: Combined selection and hyperparameter optimization of classification algorithms, in: Proceedings of the 19th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining, KDD '13. ACM, New York, NY, USA, pp. 847--855. doi:\href{https://doi.org/10.1145/2487575.2487629}{10.1145/2487575.2487629}
+Thornton, Chris, Frank Hutter, Holger H. Hoos, and Kevin Leyton-Brown. 2013. {``Auto-WEKA: Combined Selection and Hyperparameter Optimization of Classification Algorithms.''} In \emph{Proceedings of the 19th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining}, 847--55. KDD '13. New York, NY, USA: ACM. \url{https://doi.org/10.1145/2487575.2487629}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-tutz_2016}{}}%
-Tutz, G., Gertheiss, J., 2016. Rejoinder: Regularized regression for categorical data. Statistical Modelling 16, 249--260. doi:\href{https://doi.org/10.1177/1471082X16652780}{10.1177/1471082X16652780}
+Tutz, Gerhard, and Jan Gertheiss. 2016. {``Rejoinder: Regularized Regression for Categorical Data.''} \emph{Statistical Modelling} 16 (3): 249--60. \url{https://doi.org/10.1177/1471082X16652780}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-vanschoren_2013}{}}%
-Vanschoren, J., N. van Rijn, J., Bischl, B., Torgo, L., 2013. {OpenML}: Networked science in machine learning. SIGKDD Explorations 15, 49--60. doi:\href{https://doi.org/10.1145/2641190.2641198}{10.1145/2641190.2641198}
+Vanschoren, Joaquin, Jan N. van Rijn, Bernd Bischl, and Luis Torgo. 2013. {``{OpenML}: Networked Science in Machine Learning.''} \emph{SIGKDD Explorations} 15: 49--60. \url{https://doi.org/10.1145/2641190.2641198}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-weinberger_2009}{}}%
-Weinberger, K.Q., Dasgupta, A., Langford, J., Smola, A.J., Attenberg, J., 2009. Feature hashing for large scale multitask learning, in: ICML.
+Weinberger, Kilian, Anirban Dasgupta, John Langford, Alex Smola, and Josh Attenberg. 2009. {``Feature Hashing for Large Scale Multitask Learning.''} In \emph{Proceedings of the 26th Annual International Conference on Machine Learning}, 1113--20. ICML '09. New York, NY, USA: Association for Computing Machinery. \url{https://doi.org/10.1145/1553374.1553516}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-wright_2019}{}}%
-Wright, M.N., König, I.R., 2019. Splitting on categorical predictors in random forests. PeerJ 7. doi:\href{https://doi.org/10.7717/peerj.6339}{10.7717/peerj.6339}
+Wright, Marvin N., and Inke R. König. 2019. {``Splitting on Categorical Predictors in Random Forests.''} \emph{PeerJ} 7. \url{https://doi.org/10.7717/peerj.6339}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-wright_2017}{}}%
-Wright, M.N., Ziegler, A., 2017. {ranger}: A fast implementation of random forests for high dimensional data in {C++} and {R}. Journal of Statistical Software 77, 1--17. doi:\href{https://doi.org/10.18637/jss.v077.i01}{10.18637/jss.v077.i01}
+Wright, Marvin N., and Andreas Ziegler. 2017. {``{ranger}: A Fast Implementation of Random Forests for High Dimensional Data in {C++} and {R}.''} \emph{Journal of Statistical Software} 77 (1): 1--17. \url{https://doi.org/10.18637/jss.v077.i01}.
 
 \leavevmode\vadjust pre{\hypertarget{ref-young_1976}{}}%
-Young, F.W., De Leeuw, J., Takane, Y., 1976. Regression with qualitative and quantitative variables: An alternating least squares method with optimal scaling features. Psychometrika 41, 505--529. doi:\url{https://doi.org/10.1007/BF02296972}
+Young, Forrest W, Jan De Leeuw, and Yoshio Takane. 1976. {``Regression with Qualitative and Quantitative Variables: An Alternating Least Squares Method with Optimal Scaling Features.''} \emph{Psychometrika} 41 (4): 505--29. https://doi.org/\url{https://doi.org/10.1007/BF02296972}.
 
 \end{CSLReferences}
 
 
 \bibliographystyle{spbasic}
-
+\bibliography{literature.bib}
 
 
 \end{document}
