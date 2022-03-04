@@ -1,8 +1,8 @@
 # Regularized target encoding outperforms traditional methods in supervised machine learning with high cardinality features
 
-This repository contains code and results for the paper "Regularized target encoding outperforms traditional methods in supervised machine learning with high cardinality features" published in the journal Computational Statistics:
+This repository contains code and results for the paper "Regularized target encoding outperforms traditional methods in supervised machine learning with high cardinality features" published in *Computational Statistics*. Please cite:
 
-Pargent, F., Pfisterer, F., Thomas, J. et al. Regularized target encoding outperforms traditional methods in supervised machine learning with high cardinality features. Comput Stat (2022). https://doi.org/10.1007/s00180-022-01207-6
+Pargent, F., Pfisterer, F., Thomas, J., & Bischl, B. Regularized target encoding outperforms traditional methods in supervised machine learning with high cardinality features. *Computational Statistics* (2022). https://doi.org/10.1007/s00180-022-01207-6
 
 DESCRIPTION OF FOLDERS AND FILES:
 
